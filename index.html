@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krav Maga Diploma Sorgulama</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;}
+.container{max-width:800px;margin:20px auto;background:white;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.1);overflow:hidden;}
+.header{background:#d32f2f;color:white;padding:30px;text-align:center;}
+.header h1{font-size:28px;margin-bottom:10px;}
+.tabs{display:flex;background:#f8f8f8;border-bottom:1px solid #ddd;}
+.tab{flex:1;padding:15px;text-align:center;background:none;border:none;cursor:pointer;font-size:16px;color:#666;}
+.tab.active{background:white;color:#d32f2f;border-bottom:2px solid #d32f2f;}
+.content{padding:30px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.form-group{margin-bottom:20px;}
+.form-group label{display:block;margin-bottom:5px;font-weight:bold;}
+.form-group input,.form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:16px;}
+.btn{background:#d32f2f;color:white;padding:12px 25px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin:5px;}
+.btn:hover{background:#b71c1c;}
+.btn-secondary{background:#666;}
+.btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
+.btn-edit:hover{background:#1565c0;}
+.btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
+.password-container{position:relative;}
+.password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;}
+.result-card{background:#f9f9f9;border:1px solid #ddd;border-radius:5px;padding:20px;margin-top:20px;}
+.result-card h3{color:#d32f2f;margin-bottom:15px;}
+.result-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
+.result-label{font-weight:bold;color:#666;}
+.diploma-item{background:#f9f9f9;border:1px solid #ddd;border-radius:5px;padding:20px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;gap:15px;}
+.diploma-info h4{color:#d32f2f;margin-bottom:5px;}
+.diploma-info p{margin:3px 0;font-size:14px;color:#666;}
+.register-no{background:#d32f2f;color:white;padding:5px 10px;border-radius:3px;font-family:monospace;font-weight:bold;margin-bottom:10px;}
+.message{padding:15px;border-radius:5px;margin:15px 0;}
+.error{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;}
+.success{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9;}
+.info{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;}
+.hidden{display:none;}
+.photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.photo-frame.empty{font-size:10px;color:#999;text-align:center;}
+.photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;border:3px solid #d32f2f;background:#fff;margin:0 auto 15px auto;display:flex;align-items:center;justify-content:center;}
+.photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.action-buttons{display:flex;flex-direction:column;gap:5px;}
+.spinner{border:4px solid #f3f3f3;border-top:4px solid #d32f2f;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:20px auto;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.diploma-item{flex-direction:column;text-align:center;}.tabs{flex-direction:column;}.action-buttons{flex-direction:row;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>KRAV MAGA</h1>
+    <p>Diploma Sorgulama Sistemi</p>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('query')">Diploma Sorgula</button>
+    <button class="tab" onclick="showTab('admin')">Yönetici Paneli</button>
+  </div>
+  <div class="content">
+    <div id="query-content" class="tab-content active">
+      <h2>Diploma Sorgulama</h2>
+      <p>Register numaranızı girerek diploma bilgilerinizi sorgulayabilirsiniz.</p>
+      <div class="form-group">
+        <label>Register Numarası:</label>
+        <input type="text" id="searchRegister" placeholder="Örn: KM2025001">
+      </div>
+      <button class="btn" onclick="searchDiploma()">Sorgula</button>
+      <div id="searchResult"></div>
+    </div>
+
+    <div id="admin-content" class="tab-content">
+      <div id="login-form">
+        <div style="text-align:center;margin-bottom:30px;">
+          <div style="display:inline-block;background:linear-gradient(135deg,#d32f2f,#b71c1c);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(211,47,47,0.3);margin-bottom:20px;">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" fill="white" opacity="0.9"/><path d="M9 12L11 14L15 10" stroke="#d32f2f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h2 style="color:#d32f2f;margin:0;">Güvenli Yönetici Girişi</h2>
+        </div>
+        <div class="form-group">
+          <label>Yönetici Şifresi:</label>
+          <div class="password-container">
+            <input type="password" id="adminPass" placeholder="Şifrenizi girin">
+            <button type="button" class="password-toggle" onclick="togglePassword('adminPass',this)">👁️</button>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button>
+        </div>
+        <div id="loginMessage"></div>
+      </div>
+
+      <div id="admin-panel" class="hidden">
+        <h2>Yönetici Paneli</h2>
+        <div style="margin-bottom:20px;">
+          <button class="btn" onclick="showAddForm()">Yeni Diploma Ekle</button>
+          <button class="btn" onclick="showPasswordForm()">Şifre Değiştir</button>
+          <button class="btn btn-secondary" onclick="logout()">Çıkış</button>
+        </div>
+
+        <div id="add-form" class="hidden">
+          <h3 id="form-title">Yeni Diploma Ekle</h3>
+          <div class="form-group">
+            <label>Adı Soyadı:</label>
+            <input type="text" id="studentName" placeholder="Öğrenci adı soyadı">
+          </div>
+          <div class="form-group">
+            <label>Öğrenci Fotoğrafı:</label>
+            <input type="file" id="studentPhoto" accept="image/*" onchange="previewPhoto(event)">
+            <div id="photoPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
+              <div class="photo-frame-large"><img id="photoPreviewImg"></div>
+              <button type="button" class="btn btn-danger" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Sınav Tarihi:</label>
+            <input type="date" id="examDate">
+          </div>
+          <div class="form-group">
+            <label>Sınav Yeri:</label>
+            <input type="text" id="examLocation" placeholder="Sınav yeri">
+          </div>
+          <div class="form-group">
+            <label>Ana Seviye:</label>
+            <select id="mainLevel" onchange="updateSubLevels()">
+              <option value="">Seçiniz</option>
+              <option value="Practitioner">Practitioner</option>
+              <option value="Graduate">Graduate</option>
+              <option value="Expert">Expert</option>
+              <option value="Asistan">Asistan</option>
+              <option value="Antrenör">Antrenör</option>
+              <option value="Yakın Koruma">Yakın Koruma</option>
+            </select>
+          </div>
+          <div class="form-group hidden" id="sub-level-group">
+            <label>Alt Seviye:</label>
+            <select id="subLevel"><option value="">Seçiniz</option></select>
+          </div>
+          <button class="btn" id="save-btn" onclick="addDiploma()">Kaydet</button>
+          <button class="btn btn-secondary" onclick="hideAddForm()">İptal</button>
+        </div>
+
+        <div id="password-form" class="hidden">
+          <h3>Şifre Değiştir</h3>
+          <div class="form-group">
+            <label>Mevcut Şifre:</label>
+            <div class="password-container">
+              <input type="password" id="currentPass">
+              <button type="button" class="password-toggle" onclick="togglePassword('currentPass',this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Yeni Şifre:</label>
+            <div class="password-container">
+              <input type="password" id="newPass">
+              <button type="button" class="password-toggle" onclick="togglePassword('newPass',this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Yeni Şifre Tekrar:</label>
+            <div class="password-container">
+              <input type="password" id="confirmPass">
+              <button type="button" class="password-toggle" onclick="togglePassword('confirmPass',this)">👁️</button>
+            </div>
+          </div>
+          <button class="btn" onclick="changePassword()">Değiştir</button>
+          <button class="btn btn-secondary" onclick="hidePasswordForm()">İptal</button>
+        </div>
+
+        <div id="diploma-list">
+          <h3>Kayıtlı Diplomalar</h3>
+          <div id="diploma-items"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// FIREBASE AYARLARI - Kendi veritabanı adresiniz
+// ============================================
+const FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
+
+let diplomaData = [];
+let adminPassword = 'kravmaga2025';
+let currentPhotoData = '';
+let editingIndex = -1;
+let dataLoaded = false;
+
+const levelOptions = {
+  'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
+  'Asistan':[], 'Antrenör':[], 'Yakın Koruma':[]
+};
+
+// ============================================
+// FIREBASE İLE VERİ ÇEKME / KAYDETME
+// ============================================
+async function loadFromFirebase(){
+  try {
+    const res = await fetch(FIREBASE_URL + '/diplomaData.json');
+    const data = await res.json();
+    if(data && Array.isArray(data)){
+      diplomaData = data;
+    } else {
+      // İlk kurulum - varsayılan 3 kayıt
+      diplomaData = [
+        {registerNo:'KM2025001',studentName:'Bülent Çetin',examDate:'12.08.2025',examLocation:'İstanbul',level:'Graduate Level 3',photo:''},
+        {registerNo:'KM2025002',studentName:'Ayşe Yılmaz',examDate:'10.08.2025',examLocation:'Ankara',level:'Practitioner Level 2',photo:''},
+        {registerNo:'KM2025003',studentName:'Mehmet Kaya',examDate:'15.08.2025',examLocation:'İzmir',level:'Expert Level 1',photo:''}
+      ];
+      await saveToFirebase();
+    }
+
+    const passRes = await fetch(FIREBASE_URL + '/adminPassword.json');
+    const passData = await passRes.json();
+    if(passData){
+      adminPassword = passData;
+    } else {
+      await fetch(FIREBASE_URL + '/adminPassword.json', {
+        method:'PUT',
+        body: JSON.stringify('kravmaga2025')
+      });
+    }
+    dataLoaded = true;
+  } catch(e){
+    console.error('Firebase bağlantı hatası:', e);
+    dataLoaded = false;
+    diplomaData = [
+      {registerNo:'KM2025001',studentName:'Bülent Çetin',examDate:'12.08.2025',examLocation:'İstanbul',level:'Graduate Level 3',photo:''}
+    ];
+  }
+}
+
+async function saveToFirebase(){
+  try {
+    await fetch(FIREBASE_URL + '/diplomaData.json', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(diplomaData)
+    });
+    return true;
+  } catch(e){
+    console.error('Kaydetme hatası:', e);
+    return false;
+  }
+}
+
+async function savePasswordToFirebase(){
+  try {
+    await fetch(FIREBASE_URL + '/adminPassword.json', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(adminPassword)
+    });
+    return true;
+  } catch(e){
+    console.error('Şifre kaydetme hatası:', e);
+    return false;
+  }
+}
+
+// ============================================
+// ARAYÜZ FONKSİYONLARI
+// ============================================
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(name+'-content').classList.add('active');
+}
+
+function togglePassword(id,btn){
+  const input = document.getElementById(id);
+  if(input.type==='password'){input.type='text';btn.textContent='🙈';}
+  else{input.type='password';btn.textContent='👁️';}
+}
+
+function previewPhoto(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const size = 300;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      const scale = Math.min(size/img.width, size/img.height);
+      const w = img.width*scale, h = img.height*scale;
+      const x = (size-w)/2, y = (size-h)/2;
+      ctx.drawImage(img, x, y, w, h);
+      currentPhotoData = canvas.toDataURL('image/jpeg', 0.6);
+      document.getElementById('photoPreviewImg').src = currentPhotoData;
+      document.getElementById('photoPreviewBox').classList.remove('hidden');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhotoPreview(){
+  currentPhotoData = '';
+  document.getElementById('studentPhoto').value = '';
+  document.getElementById('photoPreviewBox').classList.add('hidden');
+}
+
+function searchDiploma(){
+  const registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
+  const resultDiv = document.getElementById('searchResult');
+  if(!registerNo){resultDiv.innerHTML='<div class="message error">Lütfen register numarası girin!</div>';return;}
+  const d = diplomaData.find(x=>x.registerNo.toUpperCase()===registerNo);
+  if(d){
+    const photoHtml = d.photo ? 
+      '<div class="photo-frame-large"><img src="'+d.photo+'"></div>' :
+      '<div class="photo-frame-large" style="font-size:12px;color:#999;">Fotoğraf Yok</div>';
+    resultDiv.innerHTML = '<div class="result-card"><h3>✅ Diploma Bulundu</h3>' + photoHtml +
+      '<div class="result-item"><span class="result-label">Adı Soyadı:</span><span>'+d.studentName+'</span></div>' +
+      '<div class="result-item"><span class="result-label">Sınav Tarihi:</span><span>'+d.examDate+'</span></div>' +
+      '<div class="result-item"><span class="result-label">Sınav Yeri:</span><span>'+d.examLocation+'</span></div>' +
+      '<div class="result-item"><span class="result-label">Seviye:</span><span>'+d.level+'</span></div>' +
+      '<div class="result-item"><span class="result-label">Register No:</span><span>'+d.registerNo+'</span></div></div>';
+  } else {
+    resultDiv.innerHTML = '<div class="message error">❌ Diploma bulunamadı!</div>';
+  }
+}
+
+function adminLogin(){
+  const pass = document.getElementById('adminPass').value;
+  const msg = document.getElementById('loginMessage');
+  if(pass === adminPassword){
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('admin-panel').classList.remove('hidden');
+    loadDiplomaList();
+    msg.innerHTML = '';
+    if(!dataLoaded){
+      msg.innerHTML = '<div class="message error">⚠️ Bulut bağlantısı kurulamadı, değişiklikler geçici olabilir!</div>';
+    }
+  } else {
+    msg.innerHTML = '<div class="message error">❌ Hatalı şifre!</div>';
+  }
+}
+
+function logout(){
+  document.getElementById('login-form').classList.remove('hidden');
+  document.getElementById('admin-panel').classList.add('hidden');
+  document.getElementById('adminPass').value = '';
+  hideAllForms();
+}
+
+function showAddForm(){
+  editingIndex = -1;
+  document.getElementById('form-title').textContent = 'Yeni Diploma Ekle';
+  document.getElementById('save-btn').textContent = 'Kaydet';
+  hideAllForms();
+  document.getElementById('add-form').classList.remove('hidden');
+}
+
+function hideAddForm(){
+  document.getElementById('add-form').classList.add('hidden');
+  clearAddForm();
+  editingIndex = -1;
+}
+
+function showPasswordForm(){hideAllForms();document.getElementById('password-form').classList.remove('hidden');}
+function hidePasswordForm(){document.getElementById('password-form').classList.add('hidden');clearPasswordForm();}
+function hideAllForms(){document.getElementById('add-form').classList.add('hidden');document.getElementById('password-form').classList.add('hidden');}
+
+function clearAddForm(){
+  document.getElementById('studentName').value='';
+  document.getElementById('examDate').value='';
+  document.getElementById('examLocation').value='';
+  document.getElementById('mainLevel').value='';
+  document.getElementById('subLevel').value='';
+  document.getElementById('sub-level-group').classList.add('hidden');
+  clearPhotoPreview();
+}
+function clearPasswordForm(){
+  document.getElementById('currentPass').value='';
+  document.getElementById('newPass').value='';
+  document.getElementById('confirmPass').value='';
+}
+
+function updateSubLevels(){
+  const level = document.getElementById('mainLevel').value;
+  const group = document.getElementById('sub-level-group');
+  const sel = document.getElementById('subLevel');
+  if(levelOptions[level] && levelOptions[level].length>0){
+    group.classList.remove('hidden');
+    sel.innerHTML = '<option value="">Seçiniz</option>';
+    levelOptions[level].forEach(l=>sel.innerHTML += '<option value="'+l+'">'+l+'</option>');
+  } else {
+    group.classList.add('hidden');
+    sel.innerHTML = '<option value="">Seçiniz</option>';
+  }
+}
+
+function editDiploma(index){
+  const d = diplomaData[index];
+  editingIndex = index;
+  document.getElementById('form-title').textContent = 'Diplomayı Düzenle';
+  document.getElementById('save-btn').textContent = 'Güncelle';
+  document.getElementById('studentName').value = d.studentName;
+  document.getElementById('examLocation').value = d.examLocation;
+  const parts = d.examDate.split('.');
+  if(parts.length === 3){
+    document.getElementById('examDate').value = parts[2]+'-'+parts[1]+'-'+parts[0];
+  }
+  const levelParts = d.level.split(' Level ');
+  document.getElementById('mainLevel').value = levelParts[0];
+  updateSubLevels();
+  if(levelParts[1]){
+    setTimeout(function(){ document.getElementById('subLevel').value = 'Level ' + levelParts[1]; }, 50);
+  }
+  if(d.photo){
+    currentPhotoData = d.photo;
+    document.getElementById('photoPreviewImg').src = d.photo;
+    document.getElementById('photoPreviewBox').classList.remove('hidden');
+  } else {
+    clearPhotoPreview();
+  }
+  hideAllForms();
+  document.getElementById('add-form').classList.remove('hidden');
+}
+
+async function addDiploma(){
+  const studentName = document.getElementById('studentName').value.trim();
+  const examDate = document.getElementById('examDate').value;
+  const examLocation = document.getElementById('examLocation').value.trim();
+  const mainLevel = document.getElementById('mainLevel').value;
+  const subLevel = document.getElementById('subLevel').value;
+
+  if(!studentName || !examDate || !examLocation || !mainLevel){
+    alert('⚠️ Lütfen tüm alanları doldurun!');
+    return;
+  }
+  let levelText = mainLevel + (subLevel ? ' '+subLevel : '');
+  const dObj = new Date(examDate);
+  const formattedDate = String(dObj.getDate()).padStart(2,'0')+'.'+String(dObj.getMonth()+1).padStart(2,'0')+'.'+dObj.getFullYear();
+
+  const saveBtn = document.getElementById('save-btn');
+  saveBtn.textContent = 'Kaydediliyor...';
+  saveBtn.disabled = true;
+
+  const panel = document.getElementById('admin-panel');
+  const msg = document.createElement('div');
+  msg.className = 'message success';
+
+  if(editingIndex >= 0){
+    const registerNo = diplomaData[editingIndex].registerNo;
+    diplomaData[editingIndex] = {registerNo:registerNo, studentName:studentName, examDate:formattedDate, examLocation:examLocation, level:levelText, photo:currentPhotoData};
+    msg.innerHTML = '✅ Diploma güncellendi!<br><strong>'+registerNo+'</strong> - '+studentName;
+  } else {
+    const year = new Date().getFullYear();
+    const registerNo = 'KM'+year+String(diplomaData.length+1).padStart(3,'0');
+    diplomaData.push({registerNo:registerNo, studentName:studentName, examDate:formattedDate, examLocation:examLocation, level:levelText, photo:currentPhotoData});
+    msg.innerHTML = '✅ Diploma eklendi ve buluta kaydedildi!<br><strong>'+registerNo+'</strong> - '+studentName;
+  }
+
+  const success = await saveToFirebase();
+  if(!success){
+    msg.className = 'message error';
+    msg.innerHTML = '⚠️ Kaydedildi ancak buluta senkronize edilemedi. İnternet bağlantınızı kontrol edin.';
+  }
+
+  loadDiplomaList();
+  hideAddForm();
+  panel.insertBefore(msg, document.getElementById('diploma-list'));
+  setTimeout(function(){ msg.remove(); }, 5000);
+}
+
+async function changePassword(){
+  const cur = document.getElementById('currentPass').value;
+  const nw = document.getElementById('newPass').value;
+  const cf = document.getElementById('confirmPass').value;
+  if(!cur||!nw||!cf){alert('⚠️ Lütfen tüm alanları doldurun!');return;}
+  if(cur !== adminPassword){alert('❌ Mevcut şifre hatalı!');return;}
+  if(nw.length<6){alert('⚠️ Yeni şifre en az 6 karakter olmalı!');return;}
+  if(nw !== cf){alert('❌ Şifreler eşleşmiyor!');return;}
+  adminPassword = nw;
+  await savePasswordToFirebase();
+  hidePasswordForm();
+  const panel = document.getElementById('admin-panel');
+  const msg = document.createElement('div');
+  msg.className='message success';
+  msg.textContent='✅ Şifre değiştirildi ve buluta kaydedildi!';
+  panel.insertBefore(msg, document.getElementById('diploma-list'));
+  setTimeout(function(){ msg.remove(); },3000);
+}
+
+function loadDiplomaList(){
+  const box = document.getElementById('diploma-items');
+  if(diplomaData.length===0){box.innerHTML='<p>Henüz kayıt yok.</p>';return;}
+  let html='';
+  diplomaData.forEach(function(d,i){
+    const photoHtml = d.photo ? 
+      '<div class="photo-frame"><img src="'+d.photo+'"></div>' :
+      '<div class="photo-frame empty">Fotoğraf<br>Yok</div>';
+    html += '<div class="diploma-item">' + photoHtml +
+      '<div class="diploma-info" style="flex:1;">' +
+        '<h4>'+d.studentName+'</h4>' +
+        '<p>Tarih: '+d.examDate+'</p>' +
+        '<p>Yer: '+d.examLocation+'</p>' +
+        '<p>Seviye: '+d.level+'</p>' +
+      '</div>' +
+      '<div style="text-align:center;">' +
+        '<div class="register-no">'+d.registerNo+'</div>' +
+        '<div class="action-buttons">' +
+          '<button class="btn btn-edit" onclick="editDiploma('+i+')">✏️ Düzenle</button>' +
+          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">🗑️ Sil</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  box.innerHTML = html;
+}
+
+async function deleteDiploma(i){
+  const d = diplomaData[i];
+  if(confirm('"'+d.studentName+'" diplomasını silmek istiyor musunuz?')){
+    diplomaData.splice(i,1);
+    await saveToFirebase();
+    loadDiplomaList();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async function(){
+  await loadFromFirebase();
+  loadDiplomaList();
+  const searchInput = document.getElementById('searchRegister');
+  if(searchInput){
+    searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); });
+  }
+  const passInput = document.getElementById('adminPass');
+  if(passInput){
+    passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); });
+  }
+});
+</script>
+</body>
+</html>
