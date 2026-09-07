@@ -41,13 +41,14 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .message{padding:15px;border-radius:5px;margin:15px 0;}
 .error{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;}
 .success{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9;}
+.lockout-message{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:15px;border-radius:8px;margin-top:15px;text-align:center;font-weight:bold;}
 .hidden{display:none;}
-/* Fotoğraf çerçeveleri - TAM DOLDURMA (cover) */
+/* FOTOĞRAF - ORANTILI SIĞDIRMA (contain, kırpma yok) */
 .photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.photo-frame img{width:100%;height:100%;object-fit:cover;}
+.photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
 .photo-frame-large{width:150px;height:150px;border-radius:10px;overflow:hidden;border:3px solid #d32f2f;background:#fff;margin:0 auto 10px auto;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
-.photo-frame-large img{width:100%;height:100%;object-fit:cover;}
+.photo-frame-large img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame-large::after{content:'🔍';position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;}
 .qr-box{text-align:center;margin:10px 0;}
 .qr-box canvas{border:1px solid #ddd;border-radius:6px;padding:4px;background:#fff;}
@@ -59,24 +60,25 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .search-filter-bar input{flex:2;min-width:200px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .search-filter-bar select{flex:1;min-width:140px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .result-count{font-size:13px;color:#888;margin-bottom:10px;}
-.diploma-row{background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:12px 15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background 0.15s;}
+/* AKORDİYON SATIRLARI */
+.diploma-row{background:#f9f9f9;border:1px solid #ddd;border-radius:6px 6px 0 0;padding:12px 15px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;}
+.diploma-row.closed{border-radius:6px;margin-bottom:6px;}
 .diploma-row:hover{background:#f0e8e8;}
-.row-left{display:flex;align-items:center;gap:10px;overflow:hidden;}
+.row-left{display:flex;align-items:center;gap:10px;overflow:hidden;flex:1;cursor:pointer;}
 .row-status-dot{font-size:11px;flex-shrink:0;}
 .row-name{font-weight:bold;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.row-register{font-family:monospace;color:#d32f2f;font-weight:bold;font-size:13px;flex-shrink:0;}
-.expand-icon{color:#999;font-size:13px;transition:transform 0.2s;flex-shrink:0;margin-left:10px;}
-.expand-icon.open{transform:rotate(180deg);}
-.diploma-details{background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 6px 6px;padding:18px;margin-top:-6px;margin-bottom:6px;display:flex;gap:18px;flex-wrap:wrap;}
+.row-register{font-family:monospace;color:#d32f2f;font-weight:bold;font-size:13px;flex-shrink:0;margin-left:8px;}
+.expand-btn{background:none;border:none;cursor:pointer;font-size:18px;color:#d32f2f;padding:4px 10px;flex-shrink:0;transition:transform 0.25s;}
+.expand-btn.open{transform:rotate(180deg);}
+.diploma-details{background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 6px 6px;padding:18px;margin-top:0;margin-bottom:6px;display:flex;gap:18px;flex-wrap:wrap;}
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
-/* Lightbox (fotoğraf büyütme) */
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
-.lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+.lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);background:#fff;}
 .lightbox-close{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;font-weight:bold;}
-@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:120px;}}
+@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}}
 </style>
 </head>
 <body>
@@ -227,17 +229,18 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
   </div>
 </div>
 
-<!-- Fotoğraf Büyütme (Lightbox) -->
 <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
   <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
   <img id="lightbox-img" src="">
 </div>
 
-<!-- PDF için gizli render alanı -->
 <div id="pdf-qr-hidden" style="position:absolute;left:-9999px;top:-9999px;"></div>
 
 <script>
 const FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MINUTES = 5;
+let lockoutTimer = null;
 
 let diplomaData = [];
 let adminPassword = 'kravmaga2025';
@@ -276,7 +279,7 @@ function togglePassword(id,btn){
   else{input.type='password';btn.textContent='👁️';}
 }
 
-// FOTOĞRAF - Çerçeveyi TAM DOLDURMA (kırparak sığdırma)
+// FOTOĞRAF - ORANTILI SIĞDIRMA (contain) - kırpma yok, tüm resim görünür
 function previewPhoto(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -288,11 +291,13 @@ function previewPhoto(event){
       const canvas = document.createElement('canvas');
       canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
-      const scale = Math.max(size/img.width, size/img.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      const scale = Math.min(size/img.width, size/img.height);
       const w = img.width*scale, h = img.height*scale;
       const x = (size-w)/2, y = (size-h)/2;
       ctx.drawImage(img, x, y, w, h);
-      currentPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+      currentPhotoData = canvas.toDataURL('image/jpeg', 0.8);
       document.getElementById('photoPreviewImg').src = currentPhotoData;
       document.getElementById('photoPreviewBox').classList.remove('hidden');
     };
@@ -307,7 +312,6 @@ function clearPhotoPreview(){
   document.getElementById('photoPreviewBox').classList.add('hidden');
 }
 
-// LIGHTBOX - Fotoğrafa tıklayınca büyütme
 function openLightbox(src){
   if(!src) return;
   document.getElementById('lightbox-img').src = src;
@@ -317,7 +321,6 @@ function closeLightbox(){
   document.getElementById('lightbox').classList.remove('show');
 }
 
-// QR KOD OLUŞTURMA
 function generateQR(elementId, text){
   const el = document.getElementById(elementId);
   if(!el) return;
@@ -365,7 +368,6 @@ async function searchDiploma(){
   }
 }
 
-// PDF İNDİRME
 function downloadPDF(){
   if(!lastSearchedRecord) return;
   const d = lastSearchedRecord;
@@ -426,7 +428,42 @@ function downloadPDF(){
   }, 200);
 }
 
+function checkLockoutStatus(){
+  const lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
+  const now = Date.now();
+  if(lockUntil > now){
+    startLockoutCountdown(lockUntil);
+    return true;
+  }
+  return false;
+}
+
+function startLockoutCountdown(lockUntil){
+  const btn = document.getElementById('login-btn');
+  const msg = document.getElementById('loginMessage');
+  btn.disabled = true;
+  if(lockoutTimer) clearInterval(lockoutTimer);
+  function updateDisplay(){
+    const remaining = lockUntil - Date.now();
+    if(remaining <= 0){
+      clearInterval(lockoutTimer);
+      localStorage.removeItem('loginLockUntil');
+      localStorage.removeItem('loginAttempts');
+      btn.disabled = false;
+      btn.textContent = '🔓 Giriş Yap';
+      msg.innerHTML = '';
+      return;
+    }
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    msg.innerHTML = '<div class="lockout-message">🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen ' + mins + ':' + String(secs).padStart(2,'0') + ' dakika sonra tekrar deneyin.</div>';
+  }
+  updateDisplay();
+  lockoutTimer = setInterval(updateDisplay, 1000);
+}
+
 async function adminLogin(){
+  if(checkLockoutStatus()) return;
   const pass = document.getElementById('adminPass').value;
   const msg = document.getElementById('loginMessage');
   const btn = document.getElementById('login-btn');
@@ -440,28 +477,65 @@ async function adminLogin(){
     }
     if(pass === storedPass){
       adminPassword = storedPass;
+      localStorage.removeItem('loginAttempts');
+      localStorage.removeItem('loginLockUntil');
       document.getElementById('login-form').classList.add('hidden');
       document.getElementById('admin-panel').classList.remove('hidden');
       msg.innerHTML = '';
       await loadAllDiplomas();
     } else {
-      msg.innerHTML = '<div class="message error">❌ Hatalı şifre!</div>';
+      let attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
+      localStorage.setItem('loginAttempts', attempts);
+      if(attempts >= MAX_ATTEMPTS){
+        const lockUntil = Date.now() + (LOCKOUT_MINUTES * 60 * 1000);
+        localStorage.setItem('loginLockUntil', lockUntil);
+        startLockoutCountdown(lockUntil);
+      } else {
+        const remaining = MAX_ATTEMPTS - attempts;
+        msg.innerHTML = '<div class="message error">❌ Hatalı şifre! (Kalan hak: ' + remaining + ')</div>';
+        btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
+      }
     }
   } catch(e){
     msg.innerHTML = '<div class="message error">⚠️ Bağlantı hatası!</div>';
-  } finally {
     btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
   }
 }
 
+// ============================================
+// VERİ YÜKLEME + OTOMATİK ONARIM (eski formatlı/bozuk kayıtları düzeltir)
+// ============================================
 async function loadAllDiplomas(){
   const box = document.getElementById('diploma-items');
   box.innerHTML = '<div class="spinner"></div>';
+  diplomaData = [];
   try {
     const res = await fetch(FIREBASE_URL + '/diplomaData.json');
     const data = await res.json();
-    diplomaData = [];
-    if(data){ for(const key in data){ diplomaData.push(data[key]); } }
+    const migrations = [];
+
+    if(data){
+      for(const key in data){
+        const record = data[key];
+        if(record && typeof record === 'object' && record.registerNo){
+          diplomaData.push(record);
+          if(key !== record.registerNo){
+            migrations.push({ oldKey: key, record: record });
+          }
+        }
+      }
+    }
+
+    if(migrations.length > 0){
+      for(const m of migrations){
+        try {
+          await fetch(FIREBASE_URL + '/diplomaData/' + m.record.registerNo + '.json', {
+            method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m.record)
+          });
+          await fetch(FIREBASE_URL + '/diplomaData/' + m.oldKey + '.json', { method:'DELETE' });
+        } catch(e){ console.warn('Onarım hatası:', e); }
+      }
+    }
   } catch(e){ diplomaData = []; }
   expandedRows = {};
   filterDiplomas();
@@ -577,7 +651,12 @@ async function addDiploma(){
       msg.innerHTML = '✅ Kayıt güncellendi!<br><strong>'+registerNo+'</strong> - '+studentName;
     } else {
       const year = new Date().getFullYear();
-      registerNo = 'KM'+year+String(diplomaData.length+1).padStart(3,'0');
+      let counter = diplomaData.length + 1;
+      registerNo = 'KM'+year+String(counter).padStart(3,'0');
+      while(diplomaData.some(function(x){return x.registerNo === registerNo;})){
+        counter++;
+        registerNo = 'KM'+year+String(counter).padStart(3,'0');
+      }
       record = {registerNo, studentName, joinDate: formattedJoinDate, examDate: formattedExamDate, examLocation, level: levelText, photo: currentPhotoData, status: 'aktif'};
       diplomaData.push(record);
       msg.innerHTML = '✅ Kayıt eklendi ve buluta kaydedildi!<br><strong>'+registerNo+'</strong> - '+studentName;
@@ -663,6 +742,9 @@ function renderStats(){
   }
 }
 
+// ============================================
+// AKORDİYON LİSTE - Sade satır + tıklanabilir ok
+// ============================================
 function renderDiplomaList(filtered, isFiltering){
   const box = document.getElementById('diploma-items');
   const countBox = document.getElementById('result-count');
@@ -688,13 +770,13 @@ function renderDiplomaList(filtered, isFiltering){
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">Fotoğraf<br>Yok</div>';
 
-    html += '<div class="diploma-row" onclick="toggleDetails('+i+')">' +
-        '<div class="row-left">' +
+    html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
+        '<div class="row-left" onclick="toggleDetails('+i+')">' +
           '<span class="row-status-dot">'+statusDot+'</span>' +
           '<span class="row-name">'+d.studentName+'</span>' +
           '<span class="row-register">'+d.registerNo+'</span>' +
         '</div>' +
-        '<span class="expand-icon'+(isOpen?' open':'')+'" id="icon-'+i+'">▼</span>' +
+        '<button type="button" class="expand-btn'+(isOpen?' open':'')+'" id="icon-'+i+'" onclick="toggleDetails('+i+')">▼</button>' +
       '</div>' +
       '<div class="diploma-details'+(isOpen?'':' hidden')+'" id="details-'+i+'">' +
         photoHtml +
@@ -706,8 +788,8 @@ function renderDiplomaList(filtered, isFiltering){
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
-          '<button class="btn btn-edit" onclick="event.stopPropagation();editDiploma('+i+')">✏️ Düzenle</button>' +
-          '<button class="btn btn-danger" onclick="event.stopPropagation();deleteDiploma('+i+')">🗑️ Sil</button>' +
+          '<button class="btn btn-edit" onclick="editDiploma('+i+')">✏️ Düzenle</button>' +
+          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">🗑️ Sil</button>' +
         '</div>' +
       '</div>';
   });
@@ -718,18 +800,18 @@ function toggleDetails(i){
   expandedRows[i] = !expandedRows[i];
   const details = document.getElementById('details-'+i);
   const icon = document.getElementById('icon-'+i);
+  const row = icon ? icon.closest('.diploma-row') : null;
   if(details){ details.classList.toggle('hidden'); }
   if(icon){ icon.classList.toggle('open'); }
+  if(row){ row.classList.toggle('closed'); }
 }
 
 async function deleteDiploma(i){
   const d = diplomaData[i];
-  if(confirm('"'+d.studentName+'" kaydını silmek istiyor musunuz?')){
+  if(confirm('"'+d.studentName+'" ('+d.registerNo+') kaydını silmek istiyor musunuz?')){
     try {
       await fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'});
-      diplomaData.splice(i,1);
-      expandedRows = {};
-      filterDiplomas();
+      await loadAllDiplomas();
     } catch(e){
       alert('⚠️ Silinemedi, internet bağlantınızı kontrol edin.');
     }
@@ -741,6 +823,7 @@ document.addEventListener('DOMContentLoaded', function(){
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
   const passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
+  checkLockoutStatus();
 });
 </script>
 </body>
