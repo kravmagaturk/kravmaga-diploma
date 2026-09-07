@@ -41,8 +41,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .message{padding:15px;border-radius:5px;margin:15px 0;}
 .error{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;}
 .success{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9;}
-.lockout-message{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:15px;border-radius:8px;margin-top:15px;text-align:center;font-weight:bold;}
 .hidden{display:none;}
+/* Fotoğraf çerçeveleri - TAM DOLDURMA (cover) */
 .photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .photo-frame img{width:100%;height:100%;object-fit:cover;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
@@ -71,6 +71,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
+/* Lightbox (fotoğraf büyütme) */
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
@@ -226,18 +227,17 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
   </div>
 </div>
 
+<!-- Fotoğraf Büyütme (Lightbox) -->
 <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
   <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
   <img id="lightbox-img" src="">
 </div>
 
+<!-- PDF için gizli render alanı -->
 <div id="pdf-qr-hidden" style="position:absolute;left:-9999px;top:-9999px;"></div>
 
 <script>
 const FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_MINUTES = 5;
-let lockoutTimer = null;
 
 let diplomaData = [];
 let adminPassword = 'kravmaga2025';
@@ -276,6 +276,7 @@ function togglePassword(id,btn){
   else{input.type='password';btn.textContent='👁️';}
 }
 
+// FOTOĞRAF - Çerçeveyi TAM DOLDURMA (kırparak sığdırma)
 function previewPhoto(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -306,6 +307,7 @@ function clearPhotoPreview(){
   document.getElementById('photoPreviewBox').classList.add('hidden');
 }
 
+// LIGHTBOX - Fotoğrafa tıklayınca büyütme
 function openLightbox(src){
   if(!src) return;
   document.getElementById('lightbox-img').src = src;
@@ -315,6 +317,7 @@ function closeLightbox(){
   document.getElementById('lightbox').classList.remove('show');
 }
 
+// QR KOD OLUŞTURMA
 function generateQR(elementId, text){
   const el = document.getElementById(elementId);
   if(!el) return;
@@ -362,6 +365,7 @@ async function searchDiploma(){
   }
 }
 
+// PDF İNDİRME
 function downloadPDF(){
   if(!lastSearchedRecord) return;
   const d = lastSearchedRecord;
@@ -422,47 +426,7 @@ function downloadPDF(){
   }, 200);
 }
 
-// ============================================
-// ŞİFRE KİLİTLEME SİSTEMİ (3 yanlış = 5 dk kilit)
-// ============================================
-function checkLockoutStatus(){
-  const lockUntil = parseInt(localStorage.getItem('loginLockUntil') || '0');
-  const now = Date.now();
-  if(lockUntil > now){
-    startLockoutCountdown(lockUntil);
-    return true;
-  }
-  return false;
-}
-
-function startLockoutCountdown(lockUntil){
-  const btn = document.getElementById('login-btn');
-  const msg = document.getElementById('loginMessage');
-  btn.disabled = true;
-  if(lockoutTimer) clearInterval(lockoutTimer);
-
-  function updateDisplay(){
-    const remaining = lockUntil - Date.now();
-    if(remaining <= 0){
-      clearInterval(lockoutTimer);
-      localStorage.removeItem('loginLockUntil');
-      localStorage.removeItem('loginAttempts');
-      btn.disabled = false;
-      btn.textContent = '🔓 Giriş Yap';
-      msg.innerHTML = '';
-      return;
-    }
-    const mins = Math.floor(remaining / 60000);
-    const secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen ' + mins + ':' + String(secs).padStart(2,'0') + ' dakika sonra tekrar deneyin.</div>';
-  }
-  updateDisplay();
-  lockoutTimer = setInterval(updateDisplay, 1000);
-}
-
 async function adminLogin(){
-  if(checkLockoutStatus()) return;
-
   const pass = document.getElementById('adminPass').value;
   const msg = document.getElementById('loginMessage');
   const btn = document.getElementById('login-btn');
@@ -476,27 +440,16 @@ async function adminLogin(){
     }
     if(pass === storedPass){
       adminPassword = storedPass;
-      localStorage.removeItem('loginAttempts');
-      localStorage.removeItem('loginLockUntil');
       document.getElementById('login-form').classList.add('hidden');
       document.getElementById('admin-panel').classList.remove('hidden');
       msg.innerHTML = '';
       await loadAllDiplomas();
     } else {
-      let attempts = parseInt(localStorage.getItem('loginAttempts') || '0') + 1;
-      localStorage.setItem('loginAttempts', attempts);
-      if(attempts >= MAX_ATTEMPTS){
-        const lockUntil = Date.now() + (LOCKOUT_MINUTES * 60 * 1000);
-        localStorage.setItem('loginLockUntil', lockUntil);
-        startLockoutCountdown(lockUntil);
-      } else {
-        const remaining = MAX_ATTEMPTS - attempts;
-        msg.innerHTML = '<div class="message error">❌ Hatalı şifre! (Kalan hak: ' + remaining + ')</div>';
-        btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
-      }
+      msg.innerHTML = '<div class="message error">❌ Hatalı şifre!</div>';
     }
   } catch(e){
     msg.innerHTML = '<div class="message error">⚠️ Bağlantı hatası!</div>';
+  } finally {
     btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
   }
 }
@@ -788,7 +741,6 @@ document.addEventListener('DOMContentLoaded', function(){
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
   const passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
-  checkLockoutStatus();
 });
 </script>
 </body>
