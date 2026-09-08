@@ -43,7 +43,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .success{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9;}
 .lockout-message{background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:15px;border-radius:8px;margin-top:15px;text-align:center;font-weight:bold;}
 .hidden{display:none;}
-/* FOTOĞRAF - ORANTILI SIĞDIRMA (contain, kırpma yok) */
 .photo-frame{width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #d32f2f;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .photo-frame img{width:100%;height:100%;object-fit:contain;background:#fff;}
 .photo-frame.empty{font-size:10px;color:#999;text-align:center;}
@@ -60,7 +59,6 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .search-filter-bar input{flex:2;min-width:200px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .search-filter-bar select{flex:1;min-width:140px;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
 .result-count{font-size:13px;color:#888;margin-bottom:10px;}
-/* AKORDİYON SATIRLARI */
 .diploma-row{background:#f9f9f9;border:1px solid #ddd;border-radius:6px 6px 0 0;padding:12px 15px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;}
 .diploma-row.closed{border-radius:6px;margin-bottom:6px;}
 .diploma-row:hover{background:#f0e8e8;}
@@ -79,6 +77,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);background:#fff;}
 .lightbox-close{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;font-weight:bold;}
+.legal-footer{text-align:center;padding:15px;font-size:11px;color:#999;border-top:1px solid #eee;background:#fafafa;}
 @media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}}
 </style>
 </head>
@@ -228,6 +227,10 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
       </div>
     </div>
   </div>
+
+  <div class="legal-footer">
+    © 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875
+  </div>
 </div>
 
 <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
@@ -244,7 +247,7 @@ const LOCKOUT_MINUTES = 5;
 let lockoutTimer = null;
 
 let diplomaData = [];
-let adminPassword = 'kravmaga2025';
+let currentPasswordHash = null;
 let currentPhotoData = '';
 let editingIndex = -1;
 let expandedRows = {};
@@ -256,6 +259,27 @@ const levelOptions = {
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Asistan':[], 'Antrenör':[], 'Yakın Koruma':[]
 };
+
+async function sha256(text){
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+function generateRandomPassword(length){
+  length = length || 10;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let result = '';
+  for(let i=0;i<length;i++){ result += chars.charAt(Math.floor(Math.random()*chars.length)); }
+  return result;
+}
+
+async function getStoredPasswordHash(){
+  const res = await fetch(FIREBASE_URL + '/adminPasswordHash.json');
+  return await res.json();
+}
 
 function formatDateForDisplay(isoDate){
   const d = new Date(isoDate);
@@ -280,7 +304,6 @@ function togglePassword(id,btn){
   else{input.type='password';btn.textContent='👁️';}
 }
 
-// FOTOĞRAF - ORANTILI SIĞDIRMA (contain) - kırpma yok, tüm resim görünür
 function previewPhoto(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -369,6 +392,7 @@ async function searchDiploma(){
   }
 }
 
+// PDF - Yasal marka koruma metni eklendi
 function downloadPDF(){
   if(!lastSearchedRecord) return;
   const d = lastSearchedRecord;
@@ -421,9 +445,16 @@ function downloadPDF(){
       textY += 9;
     });
 
+    doc.setDrawColor(220,220,220);
+    doc.line(15, 268, 195, 268);
+
     doc.setFontSize(9);
     doc.setTextColor(150,150,150);
-    doc.text('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde olusturulmustur.', 15, 280);
+    doc.text('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde olusturulmustur.', 15, 275);
+
+    doc.setFontSize(8);
+    doc.setTextColor(130,130,130);
+    doc.text('© 2026 Tum Haklari Saklidir. Krav Maga Turk Guvenlik Danismanligi (R)TPE: 2007/49875', 15, 283);
 
     doc.save('kayit-' + d.registerNo + '.pdf');
   }, 200);
@@ -470,14 +501,20 @@ async function adminLogin(){
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'Kontrol ediliyor...';
   try {
-    const res = await fetch(FIREBASE_URL + '/adminPassword.json');
-    let storedPass = await res.json();
-    if(!storedPass){
-      storedPass = 'kravmaga2025';
-      await fetch(FIREBASE_URL + '/adminPassword.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(storedPass)});
+    let storedHash = await getStoredPasswordHash();
+
+    if(!storedHash){
+      const newPass = generateRandomPassword();
+      storedHash = await sha256(newPass);
+      await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(storedHash)});
+      alert('🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: ' + newPass + '\n\nLütfen bu şifreyi güvenli bir yere not edin. Tekrar gösterilmeyecektir. Şimdi bu şifre ile giriş yapabilirsiniz.');
+      btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
+      return;
     }
-    if(pass === storedPass){
-      adminPassword = storedPass;
+
+    const enteredHash = await sha256(pass);
+    if(enteredHash === storedHash){
+      currentPasswordHash = storedHash;
       localStorage.removeItem('loginAttempts');
       localStorage.removeItem('loginLockUntil');
       document.getElementById('login-form').classList.add('hidden');
@@ -503,9 +540,6 @@ async function adminLogin(){
   }
 }
 
-// ============================================
-// VERİ YÜKLEME + OTOMATİK ONARIM (eski formatlı/bozuk kayıtları düzeltir)
-// ============================================
 async function loadAllDiplomas(){
   const box = document.getElementById('diploma-items');
   box.innerHTML = '<div class="spinner"></div>';
@@ -547,6 +581,7 @@ function logout(){
   document.getElementById('admin-panel').classList.add('hidden');
   document.getElementById('adminPass').value = '';
   diplomaData = [];
+  currentPasswordHash = null;
   hideAllForms();
 }
 
@@ -693,18 +728,26 @@ async function changePassword(){
   const cf = document.getElementById('confirmPass').value;
   const btn = document.getElementById('pass-btn');
   if(!cur||!nw||!cf){alert('⚠️ Lütfen tüm alanları doldurun!');return;}
-  if(cur !== adminPassword){alert('❌ Mevcut şifre hatalı!');return;}
-  if(nw.length<6){alert('⚠️ Yeni şifre en az 6 karakter olmalı!');return;}
-  if(nw !== cf){alert('❌ Şifreler eşleşmiyor!');return;}
-  btn.disabled = true; btn.textContent = 'Kaydediliyor...';
+
+  btn.disabled = true; btn.textContent = 'Kontrol ediliyor...';
   try {
-    await fetch(FIREBASE_URL + '/adminPassword.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(nw)});
-    adminPassword = nw;
+    const curHash = await sha256(cur);
+    if(curHash !== currentPasswordHash){
+      alert('❌ Mevcut şifre hatalı!');
+      btn.disabled = false; btn.textContent = 'Değiştir';
+      return;
+    }
+    if(nw.length<6){alert('⚠️ Yeni şifre en az 6 karakter olmalı!'); btn.disabled = false; btn.textContent = 'Değiştir'; return;}
+    if(nw !== cf){alert('❌ Şifreler eşleşmiyor!'); btn.disabled = false; btn.textContent = 'Değiştir'; return;}
+
+    const newHash = await sha256(nw);
+    await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newHash)});
+    currentPasswordHash = newHash;
     hidePasswordForm();
     const panel = document.getElementById('admin-panel');
     const msg = document.createElement('div');
     msg.className='message success';
-    msg.textContent='✅ Şifre değiştirildi ve buluta kaydedildi!';
+    msg.textContent='✅ Şifre değiştirildi ve güvenli şekilde kaydedildi!';
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); },3000);
   } catch(e){
@@ -743,9 +786,6 @@ function renderStats(){
   }
 }
 
-// ============================================
-// AKORDİYON LİSTE - Sade satır + tıklanabilir ok
-// ============================================
 function renderDiplomaList(filtered, isFiltering){
   const box = document.getElementById('diploma-items');
   const countBox = document.getElementById('result-count');
