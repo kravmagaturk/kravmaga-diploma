@@ -84,7 +84,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 <body>
 <div class="container">
   <div class="header">
-    <img src="logo.png" class="logo" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
+    <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
     <h1>KRAV MAGA</h1>
     <p>Kayıtlı Öğrenci Sorgulama Sistemi</p>
   </div>
@@ -352,6 +352,24 @@ function generateQR(elementId, text){
   new QRCode(el, { text: text, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
 }
 
+// ============================================
+// FİLİGRAN - Gerçek logo.png, soluk (%8 opaklık), PNG (şeffaf zeminli)
+// ============================================
+function generateLogoWatermark(){
+  const logoImg = document.getElementById('siteLogoImg');
+  const size = 600;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  try {
+    if(logoImg && logoImg.complete && logoImg.naturalWidth > 0){
+      ctx.globalAlpha = 0.08;
+      ctx.drawImage(logoImg, 0, 0, size, size);
+    }
+  } catch(e){ console.warn('Filigran çizilemedi:', e); }
+  return canvas.toDataURL('image/png');
+}
+
 async function searchDiploma(){
   const registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   const resultDiv = document.getElementById('searchResult');
@@ -392,72 +410,105 @@ async function searchDiploma(){
   }
 }
 
-// PDF - Yasal marka koruma metni eklendi
+// ============================================
+// PDF OLUŞTURMA - Beyaz zemin, dikey düzen (Fotoğraf üstte / QR altta)
+// ============================================
 function downloadPDF(){
   if(!lastSearchedRecord) return;
   const d = lastSearchedRecord;
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const doc = new jsPDF('p','mm','a4');
+  const pageW = 210;
 
-  doc.setFontSize(18);
+  // 1. Filigran (arka plan, en altta, soluk logo)
+  const watermarkData = generateLogoWatermark();
+  const wmSize = 130;
+  doc.addImage(watermarkData, 'PNG', (pageW-wmSize)/2, 75, wmSize, wmSize);
+
+  // 2. Başlık
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(17);
   doc.setTextColor(211,47,47);
-  doc.text('KRAV MAGA - Kayitli Ogrenci Bilgileri', 15, 20);
+  doc.text('KRAV MAGA - Kayıtlı Öğrenci Bilgileri', pageW/2, 18, {align:'center'});
   doc.setDrawColor(211,47,47);
-  doc.line(15, 24, 195, 24);
+  doc.setLineWidth(0.4);
+  doc.line(15, 23, 195, 23);
 
-  let yPos = 35;
-
+  // 3. Fotoğraf (üstte, ortalı, küçük ~34mm)
+  const photoSize = 34;
+  const photoX = (pageW - photoSize)/2, photoY = 30;
+  doc.setDrawColor(211,47,47);
+  doc.setLineWidth(0.6);
+  doc.rect(photoX-1, photoY-1, photoSize+2, photoSize+2);
   if(d.photo){
-    try { doc.addImage(d.photo, 'JPEG', 15, yPos, 45, 45); } catch(e){}
+    try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
+  } else {
+    doc.setFillColor(240,240,240);
+    doc.rect(photoX, photoY, photoSize, photoSize, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(150,150,150);
+    doc.text('Fotoğraf Yok', pageX_center(photoX,photoSize), photoY+photoSize/2, {align:'center'});
   }
+  function photoX_unused(){} // (kullanılmıyor, güvenlik amaçlı boş bırakıldı)
+  function pageX_center(x,w){ return x + w/2; }
 
+  // 4. QR Kod (fotoğrafın hemen altında, ortalı)
   const qrTemp = document.getElementById('pdf-qr-hidden');
   qrTemp.innerHTML = '';
-  new QRCode(qrTemp, { text: d.registerNo, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M });
+  new QRCode(qrTemp, { text: d.registerNo, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
 
   setTimeout(function(){
+    const qrSize = 26;
+    const qrX = (pageW - qrSize)/2, qrY = photoY + photoSize + 8;
     try {
       const qrCanvas = qrTemp.querySelector('canvas');
       if(qrCanvas){
         const qrData = qrCanvas.toDataURL('image/png');
-        doc.addImage(qrData, 'PNG', 145, yPos, 40, 40);
+        doc.setDrawColor(200,200,200);
+        doc.setLineWidth(0.3);
+        doc.rect(qrX-1, qrY-1, qrSize+2, qrSize+2);
+        doc.addImage(qrData, 'PNG', qrX, qrY, qrSize, qrSize);
       }
     } catch(e){}
 
+    // 5. Bilgi satırları (fotoğraf+QR bloğunun altında)
+    let textY = qrY + qrSize + 16;
     doc.setFontSize(11);
-    doc.setTextColor(50,50,50);
-    let textY = yPos + 55;
     const lines = [
-      ['Adi Soyadi:', d.studentName],
-      d.joinDate ? ['Akademiye Giris:', d.joinDate] : null,
-      ['Sinav Tarihi:', d.examDate],
-      ['Sinav Yeri:', d.examLocation],
+      ['Adı Soyadı:', d.studentName],
+      d.joinDate ? ['Akademiye Giriş:', d.joinDate] : null,
+      ['Sınav Tarihi:', d.examDate],
+      ['Sınav Yeri:', d.examLocation],
       ['Seviye:', d.level],
       ['Register No:', d.registerNo],
       ['Durum:', d.status === 'pasif' ? 'Pasif' : 'Aktif']
     ].filter(Boolean);
 
     lines.forEach(function(line){
-      doc.setFont(undefined,'bold');
-      doc.text(line[0], 15, textY);
-      doc.setFont(undefined,'normal');
-      doc.text(String(line[1]), 70, textY);
+      doc.setFont('helvetica','bold');
+      doc.setTextColor(211,47,47);
+      doc.text(line[0], 55, textY);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(50,50,50);
+      doc.text(String(line[1]), 110, textY);
+      doc.setDrawColor(230,230,230);
+      doc.setLineWidth(0.2);
+      doc.line(55, textY+2.5, 185, textY+2.5);
       textY += 9;
     });
 
+    // 6. Alt bilgi + yasal metin
     doc.setDrawColor(220,220,220);
     doc.line(15, 268, 195, 268);
-
     doc.setFontSize(9);
     doc.setTextColor(150,150,150);
-    doc.text('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde olusturulmustur.', 15, 275);
-
+    doc.text('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde oluşturulmuştur.', pageW/2, 275, {align:'center'});
     doc.setFontSize(8);
     doc.setTextColor(130,130,130);
-    doc.text('© 2026 Tum Haklari Saklidir. Krav Maga Turk Guvenlik Danismanligi (R)TPE: 2007/49875', 15, 283);
+    doc.text('© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875', pageW/2, 283, {align:'center'});
 
     doc.save('kayit-' + d.registerNo + '.pdf');
-  }, 200);
+  }, 250);
 }
 
 function checkLockoutStatus(){
