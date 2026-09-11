@@ -120,7 +120,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           </div>
         </div>
         <div style="text-align:center;">
-          <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button>
+          <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Log In</button>
         </div>
         <div id="loginMessage"></div>
       </div>
@@ -983,8 +983,8 @@ function renderDiplomaList(filtered, isFiltering){
     const isOpen = !!expandedRows[i];
     const statusDot = d.status === 'pasif' ? '🔴' : '🟢';
     const statusBadge = d.status === 'pasif' ?
-      '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">🔴 Pasif</span>' :
-      '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">🟢 Aktif</span>';
+      '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">🔴 Inactive Student</span>' :
+      '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">🟢 Active Student</span>';
     const photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
       '<div class="photo-frame empty">Fotoğraf<br>Yok</div>';
