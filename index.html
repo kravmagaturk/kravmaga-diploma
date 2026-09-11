@@ -478,7 +478,7 @@ async function searchDiploma(){
       const statusBadge = d.status === 'pasif' ?
         '<span class="badge-passive">🔴 Inactive Student</span>' :
         '<span class="badge-active">🟢 Active Student</span>';
-      resultDiv.innerHTML = '<div class="result-card"><h3>✅ Kayıt Bulundu</h3>' + photoHtml +
+      resultDiv.innerHTML = '<div class="result-card"><h3>✅ Registered.</h3>' + photoHtml +
         '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
         '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Register No QR Kodu</div></div>' +
         '<div class="result-item"><span class="result-label">Adı Soyadı:</span><span>'+d.studentName+'</span></div>' +
@@ -974,7 +974,7 @@ function renderDiplomaList(filtered, isFiltering){
   }
   countBox.textContent = isFiltering ? (filtered.length + ' sonuç bulundu (Toplam ' + diplomaData.length + ' kayıttan)') : '';
   if(filtered.length === 0){
-    box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">🔍 Aramanızla eşleşen kayıt bulunamadı.</p>';
+    box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">🔍 No records matching your search were found..</p>';
     return;
   }
   let html = '';
