@@ -136,7 +136,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
         <div id="add-form" class="hidden">
           <h3 id="form-title">Yeni Kayıt Ekle</h3>
           <div class="form-group">
-            <label>Adı Soyadı:</label>
+            <label>Adi Soyadi:</label>
             <input type="text" id="studentName" placeholder="Öğrenci adı soyadı">
           </div>
           <div class="form-group">
@@ -252,9 +252,7 @@ let currentPhotoData = '';
 let editingIndex = -1;
 let expandedRows = {};
 let lastSearchedRecord = null;
-
-let cachedLogoBase64 = null;   // null=henüz denenmedi, false=başarısız, string=hazır
-let cachedFontData = null;     // null=henüz denenmedi, false=başarısız, {reg,bold}=hazır
+let cachedLogoBase64 = null;
 
 const levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
@@ -262,6 +260,19 @@ const levelOptions = {
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Asistan':[], 'Antrenör':[], 'Yakın Koruma':[]
 };
+
+// ============================================
+// TÜRKÇE KARAKTER GÜVENLİĞİ - PDF standart fontu desteklemediği
+// için sadece 6 sorunlu harfi güvenli Latin karşılığına çevirir.
+// (font indirme YOK, internete bağımlı değil, asla başarısız olmaz)
+// ============================================
+function turkishSafe(text){
+  if(text === null || text === undefined) return '-';
+  return String(text)
+    .replace(/İ/g,'I').replace(/ı/g,'i')
+    .replace(/Ş/g,'S').replace(/ş/g,'s')
+    .replace(/Ğ/g,'G').replace(/ğ/g,'g');
+}
 
 async function sha256(text){
   const encoder = new TextEncoder();
@@ -355,9 +366,7 @@ function generateQR(elementId, text){
   new QRCode(el, { text: text, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
 }
 
-// ============================================
-// LOGO - fetch+blob ile %100 güvenilir yükleme (canvas/CORS riski yok)
-// ============================================
+// LOGO - fetch+blob (güvenilir, CORS riski yok)
 async function prepareLogoBase64(){
   if(cachedLogoBase64 !== null) return cachedLogoBase64;
   try {
@@ -377,55 +386,6 @@ async function prepareLogoBase64(){
   return cachedLogoBase64;
 }
 
-// ============================================
-// TÜRKÇE FONT - Roboto TTF gömme (İ,ı,ş,ğ tam destek)
-// ============================================
-function arrayBufferToBase64(buffer){
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  for(let i=0;i<bytes.byteLength;i++){ binary += String.fromCharCode(bytes[i]); }
-  return btoa(binary);
-}
-
-async function prepareFonts(doc){
-  if(cachedFontData === false) return false;
-  if(!cachedFontData){
-    try {
-      const [regRes, boldRes] = await Promise.all([
-        fetch('https://cdn.jsdelivr.net/npm/roboto-fontface@0.10.0/fonts/Roboto/Roboto-Regular.ttf'),
-        fetch('https://cdn.jsdelivr.net/npm/roboto-fontface@0.10.0/fonts/Roboto/Roboto-Bold.ttf')
-      ]);
-      if(!regRes.ok || !boldRes.ok) throw new Error('Font indirilemedi');
-      const regB64 = arrayBufferToBase64(await regRes.arrayBuffer());
-      const boldB64 = arrayBufferToBase64(await boldRes.arrayBuffer());
-      cachedFontData = { reg: regB64, bold: boldB64 };
-    } catch(e){
-      console.warn('Türkçe font yüklenemedi, standart font kullanılacak:', e);
-      cachedFontData = false;
-      return false;
-    }
-  }
-  try {
-    doc.addFileToVFS('Roboto-Regular.ttf', cachedFontData.reg);
-    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
-    doc.addFileToVFS('Roboto-Bold.ttf', cachedFontData.bold);
-    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
-    return true;
-  } catch(e){
-    console.warn('Font PDF\'e eklenemedi:', e);
-    return false;
-  }
-}
-
-function getImageDims(dataUrl){
-  return new Promise(function(resolve){
-    const img = new Image();
-    img.onload = function(){ resolve({w:img.naturalWidth||1, h:img.naturalHeight||1}); };
-    img.onerror = function(){ resolve({w:1,h:1}); };
-    img.src = dataUrl;
-  });
-}
-
 function drawCircularImage(doc, base64, cx, cy, r){
   try {
     doc.saveGraphicsState();
@@ -435,7 +395,6 @@ function drawCircularImage(doc, base64, cx, cy, r){
     doc.addImage(base64, 'PNG', cx-r, cy-r, r*2, r*2);
     doc.restoreGraphicsState();
   } catch(e){
-    console.warn('Dairesel logo çizilemedi, kare olarak deneniyor:', e);
     try { doc.addImage(base64, 'PNG', cx-r, cy-r, r*2, r*2); } catch(e2){}
   }
 }
@@ -449,9 +408,7 @@ function drawWatermarkLogo(doc, base64, cx, cy, r, opacity){
     doc.discardPath();
     doc.addImage(base64, 'PNG', cx-r, cy-r, r*2, r*2);
     doc.restoreGraphicsState();
-  } catch(e){
-    console.warn('Filigran logo çizilemedi:', e);
-  }
+  } catch(e){}
 }
 
 function generateDiagonalTextLayer(){
@@ -488,16 +445,19 @@ function smallBracket(doc, x, y, dx, dy, size){
   doc.line(x, y, x+dx*size, y);
 }
 
-function infoRow(doc, fontName, label, value, y, valueColor){
-  doc.setFont(fontName,'bold');
+// Bilgi satırı - metinler turkishSafe ile güvenli hale getiriliyor
+function infoRow(doc, label, value, y, valueColor){
+  const safeLabel = turkishSafe(label);
+  const safeValue = turkishSafe(value);
+  doc.setFont('helvetica','bold');
   doc.setFontSize(11);
   doc.setTextColor(20,20,20);
-  doc.text(label, 30, y);
-  doc.setFont(fontName,'normal');
+  doc.text(safeLabel, 30, y);
+  doc.setFont('helvetica','normal');
   doc.setFontSize(11);
   if(valueColor){ doc.setTextColor(valueColor[0],valueColor[1],valueColor[2]); }
   else { doc.setTextColor(70,70,70); }
-  doc.text(String(value || '-'), 90, y);
+  doc.text(safeValue, 90, y);
 }
 
 async function searchDiploma(){
@@ -541,7 +501,7 @@ async function searchDiploma(){
 }
 
 // ============================================
-// PDF OLUŞTURMA - Türkçe font + güvenilir logo + oranlı fotoğraf
+// PDF OLUŞTURMA - Türkçe karakter güvenliği + garantili kare fotoğraf
 // Sıralama: Logo > QR > Fotoğraf > Diploma No > Başlık > Bilgiler > Footer
 // ============================================
 async function downloadPDF(){
@@ -555,14 +515,12 @@ async function downloadPDF(){
   const doc = new jsPDF('p','mm','a4');
   const pageW = 210;
 
-  const fontOK = await prepareFonts(doc);
-  const FONT = fontOK ? 'Roboto' : 'helvetica';
   const logoData = await prepareLogoBase64();
 
-  // 1. Arka plan - çapraz filigran metni
+  // 1. Arka plan - çapraz filigran
   doc.addImage(generateDiagonalTextLayer(), 'PNG', 0, 0, 210, 297);
 
-  // 2. Sağ üstte büyük soluk logo damgası (varsa)
+  // 2. Sağ üstte soluk logo damgası
   if(logoData){
     drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09);
   }
@@ -570,7 +528,6 @@ async function downloadPDF(){
   // 3. Köşe süsleri
   drawCornerBrackets(doc);
 
-  // --- Koordinatlar ---
   const emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
   const qrY = 53, qrSize = 24, qrX = (pageW-qrSize)/2;
   const photoY = 85, photoSize = 40, photoX = (pageW-photoSize)/2;
@@ -581,19 +538,18 @@ async function downloadPDF(){
   const footerY = 262, footerDashY = 260.5;
   const legal1Y = 272, legal2Y = 280;
 
-  // 4. Üst logo (tek, net, dairesel)
+  // 4. Üst logo
   if(logoData){
     drawCircularImage(doc, logoData, emCx, emCy, emR);
   } else {
-    doc.setFont(FONT,'bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20,20,20);
     doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
   }
 
-  // 5. QR kod (en üstte, fotoğrafın üzerinde)
+  // 5. QR kod
   const qrTemp = document.getElementById('pdf-qr-hidden');
   qrTemp.innerHTML = '';
   new QRCode(qrTemp, { text: d.registerNo, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-
   await new Promise(function(resolve){ setTimeout(resolve, 200); });
   try {
     const qrCanvas = qrTemp.querySelector('canvas');
@@ -607,46 +563,40 @@ async function downloadPDF(){
     }
   } catch(e){}
 
-  // 6. Fotoğraf (oran korunarak, çerçeveye tam sığdırılır)
+  // 6. Fotoğraf - sistem her zaman kare (300x300) üretir, direkt kareye sığdır
   doc.setFillColor(235,235,235);
   doc.rect(photoX, photoY, photoSize, photoSize, 'F');
   if(d.photo){
-    try {
-      const dims = await getImageDims(d.photo);
-      const scale = Math.min(photoSize/dims.w, photoSize/dims.h);
-      const dw = dims.w*scale, dh = dims.h*scale;
-      const dx = photoX + (photoSize-dw)/2, dy = photoY + (photoSize-dh)/2;
-      doc.addImage(d.photo, 'JPEG', dx, dy, dw, dh);
-    } catch(e){}
+    try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
   } else {
-    doc.setFont(FONT,'normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
-    doc.text('FOTOĞRAF YOK', photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text('FOTOGRAF YOK', photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
   }
   smallBracket(doc, photoX, photoY, 1, 1, 9);
   smallBracket(doc, photoX+photoSize, photoY, -1, 1, 9);
   smallBracket(doc, photoX, photoY+photoSize, 1, -1, 9);
   smallBracket(doc, photoX+photoSize, photoY+photoSize, -1, -1, 9);
 
-  // 7. DİPLOMA NO
-  doc.setFont(FONT,'bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-  const dLabel = 'DİPLOMA NO';
+  // 7. DİPLOMA NO (turkishSafe ile ölçüm ve çizim aynı metinle yapılır - çizgi kayması olmaz)
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+  const dLabel = turkishSafe('DİPLOMA NO');
   const dLabelW = doc.getTextWidth(dLabel);
   doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
   doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
   doc.line(pageW/2 - dLabelW/2 - 40, dLabelY-1.5, pageW/2 - dLabelW/2 - 6, dLabelY-1.5);
   doc.line(pageW/2 + dLabelW/2 + 6, dLabelY-1.5, pageW/2 + dLabelW/2 + 40, dLabelY-1.5);
 
-  doc.setFont(FONT,'bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
-  doc.text(d.registerNo, pageW/2, dNumberY, {align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
+  doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
 
   // 8. Büyük başlık
-  doc.setFont(FONT,'bold'); doc.setFontSize(25);
+  doc.setFont('helvetica','bold'); doc.setFontSize(25);
   const w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
   const sx = pageW/2 - (w1+w2)/2;
   doc.setTextColor(20,20,20); doc.text('KRAV ', sx, titleY);
   doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
 
-  doc.setFont(FONT,'bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
   const ccLabel = 'CONTACT COMBAT';
   const ccW = doc.getTextWidth(ccLabel);
   doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
@@ -656,32 +606,32 @@ async function downloadPDF(){
 
   // 9. Bilgi satırları
   let ry = rowStartY;
-  infoRow(doc, FONT, 'Adı Soyadı:', d.studentName, ry); ry += rowStep;
-  if(d.joinDate){ infoRow(doc, FONT, 'Akademiye Giriş:', d.joinDate, ry); ry += rowStep; }
-  infoRow(doc, FONT, 'Sınav Tarihi:', d.examDate, ry); ry += rowStep;
-  infoRow(doc, FONT, 'Sınav Yeri:', d.examLocation, ry); ry += rowStep;
-  infoRow(doc, FONT, 'Seviye:', d.level, ry); ry += rowStep;
-  infoRow(doc, FONT, 'Register No:', d.registerNo, ry); ry += rowStep;
+  infoRow(doc, 'Adı Soyadı:', d.studentName, ry); ry += rowStep;
+  if(d.joinDate){ infoRow(doc, 'Akademiye Giriş:', d.joinDate, ry); ry += rowStep; }
+  infoRow(doc, 'Sınav Tarihi:', d.examDate, ry); ry += rowStep;
+  infoRow(doc, 'Sınav Yeri:', d.examLocation, ry); ry += rowStep;
+  infoRow(doc, 'Seviye:', d.level, ry); ry += rowStep;
+  infoRow(doc, 'Register No:', d.registerNo, ry); ry += rowStep;
   const isActive = d.status !== 'pasif';
-  infoRow(doc, FONT, 'Durum:', isActive ? 'Aktif' : 'Pasif', ry, isActive ? [46,125,50] : [198,40,40]);
+  infoRow(doc, 'Durum:', isActive ? 'Aktif' : 'Pasif', ry, isActive ? [46,125,50] : [198,40,40]);
 
-  // 10. Footer - Akademi adı
-  doc.setFont(FONT,'bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
-  const footerLabel = 'KRAV MAGA TURK';
+  // 10. Footer
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
+  const footerLabel = 'KRAV MAGA TURK ACADEMY';
   const flW = doc.getTextWidth(footerLabel);
   doc.text(footerLabel, pageW/2, footerY, {align:'center'});
   doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
   doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
   doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
 
-  // 11. Yasal metin
-  doc.setFont(FONT,'normal');
+  // 11. Yasal metin (turkishSafe uygulanmış, tam ortalı)
+  doc.setFont('helvetica','normal');
   doc.setFontSize(8);
   doc.setTextColor(150,150,150);
-  doc.text('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde olusturulmustur.', pageW/2, legal1Y, {align:'center'});
+  doc.text(turkishSafe('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde oluşturulmuştur.'), pageW/2, legal1Y, {align:'center'});
   doc.setFontSize(7.5);
   doc.setTextColor(160,160,160);
-  doc.text('© 2026 TUm Hakları Saklidir.®TPE: 2007/49875', pageW/2, legal2Y, {align:'center'});
+  doc.text(turkishSafe('© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875'), pageW/2, legal2Y, {align:'center'});
 
   doc.save('sertifika-' + d.registerNo + '.pdf');
 
