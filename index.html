@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Krav Maga Kayıtlı Öğrenci Sorgulama</title>
+<title>Krinternational registration</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -86,21 +86,21 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
   <div class="header">
     <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
     <h1>KRAV MAGA</h1>
-    <p>Kayıtlı Öğrenci Sorgulama Sistemi</p>
+    <p>international registration</p>
   </div>
   <div class="tabs">
-    <button class="tab active" onclick="showTab('query')">Öğrenci Sorgula</button>
-    <button class="tab" onclick="showTab('admin')">Yönetici Paneli</button>
+    <button class="tab active" onclick="showTab('query')">register</button>
+    <button class="tab" onclick="showTab('admin')">Admin</button>
   </div>
   <div class="content">
     <div id="query-content" class="tab-content active">
-      <h2>Kayıtlı Öğrenci Sorgulama</h2>
-      <p>Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.</p>
+      <h2>international registration</h2>
+      <p>You can query your registration details by entering your registration number..</p>
       <div class="form-group">
-        <label>Register Numarası:</label>
+        <label>Register Number:</label>
         <input type="text" id="searchRegister" placeholder="Örn: KM2025001">
       </div>
-      <button class="btn" id="search-btn" onclick="searchDiploma()">Sorgula</button>
+      <button class="btn" id="search-btn" onclick="searchDiploma()">Search</button>
       <div id="searchResult"></div>
     </div>
 
@@ -113,7 +113,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <h2 style="color:#d32f2f;margin:0;">Güvenli Yönetici Girişi</h2>
         </div>
         <div class="form-group">
-          <label>Yönetici Şifresi:</label>
+          <label>Administrator password:</label>
           <div class="password-container">
             <input type="password" id="adminPass" placeholder="Şifrenizi girin">
             <button type="button" class="password-toggle" onclick="togglePassword('adminPass',this)">👁️</button>
@@ -126,7 +126,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
       </div>
 
       <div id="admin-panel" class="hidden">
-        <h2>Yönetici Paneli</h2>
+        <h2>Admin Panel</h2>
         <div style="margin-bottom:20px;">
           <button class="btn" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" onclick="showPasswordForm()">Şifre Değiştir</button>
@@ -464,7 +464,7 @@ async function searchDiploma(){
   const registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   const resultDiv = document.getElementById('searchResult');
   const btn = document.getElementById('search-btn');
-  if(!registerNo){resultDiv.innerHTML='<div class="message error">Lütfen register numarası girin!</div>';return;}
+  if(!registerNo){resultDiv.innerHTML='<div class="message error">Please enter the registration number!</div>';return;}
   btn.disabled = true; btn.textContent = 'Aranıyor...';
   resultDiv.innerHTML = '<div class="spinner"></div>';
   try {
@@ -476,8 +476,8 @@ async function searchDiploma(){
         '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
         '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">Fotoğraf Yok</div>';
       const statusBadge = d.status === 'pasif' ?
-        '<span class="badge-passive">🔴 Pasif Öğrenci</span>' :
-        '<span class="badge-active">🟢 Aktif Öğrenci</span>';
+        '<span class="badge-passive">🔴 Inactive Student</span>' :
+        '<span class="badge-active">🟢 Active Student</span>';
       resultDiv.innerHTML = '<div class="result-card"><h3>✅ Kayıt Bulundu</h3>' + photoHtml +
         '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
         '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Register No QR Kodu</div></div>' +
@@ -606,14 +606,14 @@ async function downloadPDF(){
 
   // 9. Bilgi satırları
   let ry = rowStartY;
-  infoRow(doc, 'Adı Soyadı:', d.studentName, ry); ry += rowStep;
+  infoRow(doc, 'Full Name:', d.studentName, ry); ry += rowStep;
   if(d.joinDate){ infoRow(doc, 'Akademiye Giriş:', d.joinDate, ry); ry += rowStep; }
-  infoRow(doc, 'Sınav Tarihi:', d.examDate, ry); ry += rowStep;
-  infoRow(doc, 'Sınav Yeri:', d.examLocation, ry); ry += rowStep;
-  infoRow(doc, 'Seviye:', d.level, ry); ry += rowStep;
+  infoRow(doc, 'Exam Date:', d.examDate, ry); ry += rowStep;
+  infoRow(doc, 'Exam Venue:', d.examLocation, ry); ry += rowStep;
+  infoRow(doc, 'Level:', d.level, ry); ry += rowStep;
   infoRow(doc, 'Register No:', d.registerNo, ry); ry += rowStep;
   const isActive = d.status !== 'pasif';
-  infoRow(doc, 'Durum:', isActive ? 'Aktif' : 'Pasif', ry, isActive ? [46,125,50] : [198,40,40]);
+  infoRow(doc, 'Situation:', isActive ? 'Aktif' : 'Pasif', ry, isActive ? [46,125,50] : [198,40,40]);
 
   // 10. Footer
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
@@ -628,10 +628,10 @@ async function downloadPDF(){
   doc.setFont('helvetica','normal');
   doc.setFontSize(8);
   doc.setTextColor(150,150,150);
-  doc.text(turkishSafe('Bu belge ' + new Date().toLocaleDateString('tr-TR') + ' tarihinde oluşturulmuştur.'), pageW/2, legal1Y, {align:'center'});
+  doc.text(turkishSafe('This Document ' + new Date().toLocaleDateString('tr-TR') + ' created on.'), pageW/2, legal1Y, {align:'center'});
   doc.setFontSize(7.5);
   doc.setTextColor(160,160,160);
-  doc.text(turkishSafe('© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875'), pageW/2, legal2Y, {align:'center'});
+  doc.text(turkishSafe('© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875'), pageW/2, legal2Y, {align:'center'});
 
   doc.save('sertifika-' + d.registerNo + '.pdf');
 
