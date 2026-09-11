@@ -481,13 +481,13 @@ async function searchDiploma(){
       resultDiv.innerHTML = '<div class="result-card"><h3>✅ Registered.</h3>' + photoHtml +
         '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
         '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Register No QR Kodu</div></div>' +
-        '<div class="result-item"><span class="result-label">Adı Soyadı:</span><span>'+d.studentName+'</span></div>' +
-        (d.joinDate ? '<div class="result-item"><span class="result-label">Akademiye Giriş:</span><span>'+d.joinDate+'</span></div>' : '') +
-        '<div class="result-item"><span class="result-label">Sınav Tarihi:</span><span>'+d.examDate+'</span></div>' +
-        '<div class="result-item"><span class="result-label">Sınav Yeri:</span><span>'+d.examLocation+'</span></div>' +
-        '<div class="result-item"><span class="result-label">Seviye:</span><span>'+d.level+'</span></div>' +
+        '<div class="result-item"><span class="result-label">Full Name:</span><span>'+d.studentName+'</span></div>' +
+        (d.joinDate ? '<div class="result-item"><span class="result-label">Introduction to the Academy:</span><span>'+d.joinDate+'</span></div>' : '') +
+        '<div class="result-item"><span class="result-label">Exam Date:</span><span>'+d.examDate+'</span></div>' +
+        '<div class="result-item"><span class="result-label">Exam Venue:</span><span>'+d.examLocation+'</span></div>' +
+        '<div class="result-item"><span class="result-label">Level:</span><span>'+d.level+'</span></div>' +
         '<div class="result-item"><span class="result-label">Register No:</span><span>'+d.registerNo+'</span></div>' +
-        '<div style="text-align:center;margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF()">📄 PDF İndir</button></div></div>';
+        '<div style="text-align:center;margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF()">📄 PDF Download</button></div></div>';
       generateQR('searchQR', d.registerNo);
     } else {
       lastSearchedRecord = null;
@@ -613,7 +613,7 @@ async function downloadPDF(){
   infoRow(doc, 'Level:', d.level, ry); ry += rowStep;
   infoRow(doc, 'Register No:', d.registerNo, ry); ry += rowStep;
   const isActive = d.status !== 'pasif';
-  infoRow(doc, 'Situation:', isActive ? 'Aktif' : 'Pasif', ry, isActive ? [46,125,50] : [198,40,40]);
+  infoRow(doc, 'Situation:', isActive ? 'Active Student' : 'Inactive Student', ry, isActive ? [46,125,50] : [198,40,40]);
 
   // 10. Footer
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
