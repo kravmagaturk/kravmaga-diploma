@@ -10,9 +10,12 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;}
 .container{max-width:800px;margin:20px auto;background:white;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.1);overflow:hidden;}
-.header{background:#d32f2f;color:white;padding:25px;text-align:center;}
+.header{background:#d32f2f;color:white;padding:25px;text-align:center;position:relative;}
 .header img.logo{width:80px;height:80px;border-radius:50%;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);margin-bottom:10px;background:#fff;object-fit:cover;}
 .header h1{font-size:26px;margin-bottom:8px;}
+.lang-toggle{position:absolute;top:15px;right:15px;display:flex;gap:4px;}
+.lang-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:white;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:bold;}
+.lang-btn.active{background:white;color:#d32f2f;}
 .tabs{display:flex;background:#f8f8f8;border-bottom:1px solid #ddd;}
 .tab{flex:1;padding:15px;text-align:center;background:none;border:none;cursor:pointer;font-size:16px;color:#666;}
 .tab.active{background:white;color:#d32f2f;border-bottom:2px solid #d32f2f;}
@@ -28,6 +31,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .btn-secondary{background:#666;}
 .btn-pdf{background:#2e7d32;}
 .btn-pdf:hover{background:#1b5e20;}
+.btn-pdf-en{background:#1565c0;}
+.btn-pdf-en:hover{background:#0d47a1;}
 .btn-edit{background:#1976d2;padding:8px 15px;font-size:14px;}
 .btn-danger{background:#f44336;padding:8px 15px;font-size:14px;}
 .badge-active{background:#e8f5e8;color:#2e7d32;border:1px solid #a5d6a7;padding:4px 10px;border-radius:15px;font-size:12px;font-weight:bold;cursor:pointer;display:inline-block;}
@@ -73,8 +78,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
-.lang-pdf-row{display:flex;gap:4px;align-items:center;margin-top:6px;}
-.lang-select{padding:5px;border-radius:4px;border:1px solid #ddd;font-size:12px;}
+.pdf-btn-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+.pdf-btn-row .btn{margin:0;padding:6px 10px;font-size:12px;}
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);background:#fff;}
@@ -83,29 +88,33 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .log-list{max-height:400px;overflow-y:auto;background:#fff;border:1px solid #eee;border-radius:6px;padding:10px;}
 .log-item{padding:10px;border-bottom:1px solid #f0f0f0;font-size:13px;}
 .log-item:last-child{border-bottom:none;}
-@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}}
+@media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}.lang-toggle{position:static;justify-content:center;margin-top:10px;}}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
+    <div class="lang-toggle">
+      <button class="lang-btn" id="langBtnTr" onclick="setUILang('tr')">TR</button>
+      <button class="lang-btn" id="langBtnEn" onclick="setUILang('en')">EN</button>
+    </div>
     <img id="siteLogoImg" src="logo.png" class="logo" crossorigin="anonymous" onerror="this.style.display='none'" alt="Krav Maga Turk Logo">
     <h1>KRAV MAGA</h1>
-    <p>international registration</p>
+    <p id="txt-subtitle">Kayıtlı Öğrenci Sorgulama Sistemi</p>
   </div>
   <div class="tabs">
-    <button class="tab active" onclick="showTab('query')">register</button>
-    <button class="tab" onclick="showTab('admin')">Admin</button>
+    <button class="tab active" id="tab-query-btn" onclick="showTab('query')">Öğrenci Sorgula</button>
+    <button class="tab" id="tab-admin-btn" onclick="showTab('admin')">Yönetici Paneli</button>
   </div>
   <div class="content">
     <div id="query-content" class="tab-content active">
-      <h2>international registration</h2>
-      <p>You can query your registration details by entering your registration number..</p>
+      <h2 id="txt-queryHeading">Kayıtlı Öğrenci Sorgulama</h2>
+      <p id="txt-queryDesc">Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.</p>
       <div class="form-group">
-        <label>Register Number:</label>
-        <input type="text" id="searchRegister" placeholder="® international Reg.No:KM..">
+        <label id="txt-lblRegisterNo">Register Numarası:</label>
+        <input type="text" id="searchRegister" placeholder="Örn: KM-rg">
       </div>
-      <button class="btn" id="search-btn" onclick="searchDiploma()">Search</button>
+      <button class="btn" id="search-btn" onclick="searchDiploma()">Sorgula</button>
       <div id="searchResult"></div>
     </div>
 
@@ -115,120 +124,120 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
           <div style="display:inline-block;background:linear-gradient(135deg,#d32f2f,#b71c1c);width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(211,47,47,0.3);margin-bottom:20px;">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" fill="white" opacity="0.9"/><path d="M9 12L11 14L15 10" stroke="#d32f2f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h2 style="color:#d32f2f;margin:0;">international Administrator Login</h2>
+          <h2 id="txt-adminLoginHeading" style="color:#d32f2f;margin:0;">Güvenli Yönetici Girişi</h2>
         </div>
         <div class="form-group">
-          <label>Administrator password:</label>
+          <label id="txt-lblPassword">Yönetici Şifresi:</label>
           <div class="password-container">
             <input type="password" id="adminPass" placeholder="Şifrenizi girin">
             <button type="button" class="password-toggle" onclick="togglePassword('adminPass',this)">👁️</button>
           </div>
         </div>
         <div style="text-align:center;">
-          <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Log In</button>
+          <button class="btn" id="login-btn" onclick="adminLogin()" style="padding:12px 40px;border-radius:25px;">🔓 Giriş Yap</button>
         </div>
         <div id="loginMessage"></div>
       </div>
 
       <div id="admin-panel" class="hidden">
-        <h2>Admin Panel</h2>
+        <h2 id="txt-adminPanelHeading">Yönetici Paneli</h2>
         <div style="margin-bottom:20px;">
-          <button class="btn" onclick="showAddForm()">Yeni Kayıt Ekle</button>
-          <button class="btn" onclick="showPasswordForm()">Şifre Değiştir</button>
-          <button class="btn" onclick="toggleDownloadLogs()">📋 İndirme Kayıtları</button>
-          <button class="btn btn-secondary" onclick="logout()">Çıkış</button>
+          <button class="btn" id="btn-new-record" onclick="showAddForm()">Yeni Kayıt Ekle</button>
+          <button class="btn" id="btn-change-password" onclick="showPasswordForm()">Şifre Değiştir</button>
+          <button class="btn" id="btn-download-logs" onclick="toggleDownloadLogs()">📋 İndirme Kayıtları</button>
+          <button class="btn btn-secondary" id="btn-logout" onclick="logout()">Çıkış</button>
         </div>
 
         <div id="download-logs-section" class="hidden" style="margin-bottom:20px;">
-          <h4 style="margin-bottom:10px;color:#d32f2f;">📋 PDF İndirme Kayıtları</h4>
+          <h4 id="txt-downloadLogsHeading" style="margin-bottom:10px;color:#d32f2f;">📋 PDF İndirme Kayıtları</h4>
           <div id="download-logs-list" class="log-list"><div class="spinner"></div></div>
         </div>
 
         <div id="add-form" class="hidden">
           <h3 id="form-title">Yeni Kayıt Ekle</h3>
           <div class="form-group">
-            <label>Adi Soyadi:</label>
+            <label id="txt-lblStudentName">Adı Soyadı:</label>
             <input type="text" id="studentName" placeholder="Öğrenci adı soyadı">
           </div>
           <div class="form-group">
-            <label>Öğrenci Fotoğrafı:</label>
+            <label id="txt-lblPhoto">Öğrenci Fotoğrafı:</label>
             <input type="file" id="studentPhoto" accept="image/*" onchange="previewPhoto(event)">
             <div id="photoPreviewBox" class="hidden" style="margin-top:10px;text-align:center;">
               <div class="photo-frame-large" style="cursor:default;"><img id="photoPreviewImg"></div>
-              <button type="button" class="btn btn-danger" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
+              <button type="button" class="btn btn-danger" id="btn-remove-photo" onclick="clearPhotoPreview()">Fotoğrafı Kaldır</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Date of Admission to the Academy:</label>
+            <label id="txt-lblJoinDateForm">Akademiye Giriş Tarihi:</label>
             <input type="date" id="joinDate">
           </div>
           <div class="form-group">
-            <label>Exam Date:</label>
+            <label id="txt-lblExamDateForm">Sınav Tarihi:</label>
             <input type="date" id="examDate">
           </div>
           <div class="form-group">
-            <label>Exam Venue:</label>
+            <label id="txt-lblExamLocForm">Sınav Yeri:</label>
             <input type="text" id="examLocation" placeholder="Sınav yeri">
           </div>
           <div class="form-group">
-            <label>Level:</label>
+            <label id="txt-lblMainLevel">Ana Seviye:</label>
             <select id="mainLevel" onchange="updateSubLevels()">
-              <option value="">Seçiniz</option>
+              <option value="" id="opt-selectPlaceholder1">Seçiniz</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
-              <option value="Asistan">Asistan</option>
+              <option value="Asistan">Assistant</option>
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
             </select>
           </div>
           <div class="form-group hidden" id="sub-level-group">
-            <label>Alt Seviye:</label>
-            <select id="subLevel"><option value="">Seçiniz</option></select>
+            <label id="txt-lblSubLevel">Alt Seviye:</label>
+            <select id="subLevel"><option value="" id="opt-selectPlaceholder2">Seçiniz</option></select>
           </div>
           <button class="btn" id="save-btn" onclick="addDiploma()">Kaydet</button>
-          <button class="btn btn-secondary" onclick="hideAddForm()">İptal</button>
+          <button class="btn btn-secondary" id="btn-cancel-add" onclick="hideAddForm()">İptal</button>
         </div>
 
         <div id="password-form" class="hidden">
-          <h3>Şifre Değiştir</h3>
+          <h3 id="txt-pwFormHeading">Şifre Değiştir</h3>
           <div class="form-group">
-            <label>Mevcut Şifre:</label>
+            <label id="txt-lblCurrentPass">Mevcut Şifre:</label>
             <div class="password-container">
               <input type="password" id="currentPass">
               <button type="button" class="password-toggle" onclick="togglePassword('currentPass',this)">👁️</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Yeni Şifre:</label>
+            <label id="txt-lblNewPass">Yeni Şifre:</label>
             <div class="password-container">
               <input type="password" id="newPass">
               <button type="button" class="password-toggle" onclick="togglePassword('newPass',this)">👁️</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Yeni Şifre Tekrar:</label>
+            <label id="txt-lblConfirmPass">Yeni Şifre Tekrar:</label>
             <div class="password-container">
               <input type="password" id="confirmPass">
               <button type="button" class="password-toggle" onclick="togglePassword('confirmPass',this)">👁️</button>
             </div>
           </div>
           <button class="btn" id="pass-btn" onclick="changePassword()">Değiştir</button>
-          <button class="btn btn-secondary" onclick="hidePasswordForm()">İptal</button>
+          <button class="btn btn-secondary" id="btn-cancel-pw" onclick="hidePasswordForm()">İptal</button>
         </div>
 
         <div id="diploma-list">
-          <h3 style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
+          <h3 id="txt-registeredStudentsHeading" style="margin-bottom:15px;">Kayıtlı Öğrenciler</h3>
           <div id="stats-display" class="stats-bar hidden"></div>
           <div class="search-filter-bar">
             <input type="text" id="adminSearch" placeholder="🔍 İsim veya Register No ile ara..." oninput="filterDiplomas()">
             <select id="levelFilter" onchange="filterDiplomas()">
-              <option value="">Tüm Seviyeler</option>
+              <option value="" id="opt-allLevels">Tüm Seviyeler</option>
               <option value="Practitioner">Practitioner</option>
               <option value="Graduate">Graduate</option>
               <option value="Expert">Expert</option>
-              <option value="Asistan">Asistan</option>
+              <option value="Asistan">Assistant</option>
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
               <option value="Representative">Representative</option>
@@ -241,8 +250,8 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
     </div>
   </div>
 
-  <div class="legal-footer">
-    © 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875
+  <div class="legal-footer" id="txt-legalFooter">
+    © 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875
   </div>
 </div>
 
@@ -267,6 +276,7 @@ let editingIndex = -1;
 let expandedRows = {};
 let lastSearchedRecord = null;
 let cachedLogoBase64 = null;
+let uiLang = localStorage.getItem('uiLang') || 'tr';
 
 const levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
@@ -276,9 +286,177 @@ const levelOptions = {
 };
 
 // ============================================
-// ÇOK DİLLİ PDF METİNLERİ
-// (İbranice gerçek font gerektirir; şu an için İngilizce'ye eşlenmiştir,
-//  kullanıcı seçince uyarı gösterilir - sessizce bozuk çıktı üretmez.)
+// ARAYÜZ ÇEVİRİ SÖZLÜĞÜ (TR/EN) - Sadece iki dil
+// ============================================
+const UI_I18N = {
+  tr: {
+    subtitle:'Kayıtlı Öğrenci Sorgulama Sistemi',
+    tabQuery:'Öğrenci Sorgula', tabAdmin:'Yönetici Paneli',
+    queryHeading:'Kayıtlı Öğrenci Sorgulama',
+    queryDesc:'Register numaranızı girerek kayıt bilgilerinizi sorgulayabilirsiniz.',
+    lblRegisterNo:'Register Numarası:', placeholderRegisterNo:'Örn: KM2025001',
+    btnSearch:'Sorgula', searching:'Aranıyor...',
+    errEnterReg:'⚠️ Lütfen register numarası girin!',
+    errNotFound:'❌ Kayıt bulunamadı!', errConn:'⚠️ Bağlantı hatası, lütfen tekrar deneyin.',
+    foundTitle:'✅ Kayıt Bulundu', qrLabel:'Sorgulama Linki QR Kodu',
+    lblFullName:'Adı Soyadı:', lblJoinDate:'Akademiye Giriş:', lblExamDate:'Sınav Tarihi:',
+    lblExamLoc:'Sınav Yeri:', lblLevel:'Seviye:', lblRegNo:'Register No:',
+    statusActive:'🟢 Aktif Öğrenci', statusInactive:'🔴 Pasif Öğrenci',
+    btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
+    adminLoginHeading:'Güvenli Yönetici Girişi', lblPassword:'Yönetici Şifresi:',
+    placeholderPassword:'Şifrenizi girin', btnLogin:'🔓 Giriş Yap', loggingIn:'Kontrol ediliyor...',
+    errWrongPass:'❌ Hatalı şifre! (Kalan hak: {n})', errConnGeneric:'⚠️ Bağlantı hatası!',
+    adminPanelHeading:'Yönetici Paneli',
+    btnNewRecord:'Yeni Kayıt Ekle', btnChangePassword:'Şifre Değiştir',
+    btnDownloadLogs:'📋 İndirme Kayıtları', btnLogout:'Çıkış',
+    downloadLogsHeading:'📋 PDF İndirme Kayıtları', noLogsYet:'Henüz indirme kaydı yok.', logsLoadError:'Kayıtlar yüklenemedi.',
+    formTitleNew:'Yeni Kayıt Ekle', formTitleEdit:'Kaydı Düzenle',
+    lblStudentName:'Adı Soyadı:', placeholderStudentName:'Öğrenci adı soyadı',
+    lblPhoto:'Öğrenci Fotoğrafı:', btnRemovePhoto:'Fotoğrafı Kaldır',
+    lblJoinDateForm:'Akademiye Giriş Tarihi:', lblExamDateForm:'Sınav Tarihi:', lblExamLocForm:'Sınav Yeri:',
+    placeholderExamLoc:'Sınav yeri', lblMainLevel:'Ana Seviye:', selectPlaceholder:'Seçiniz',
+    lblSubLevel:'Alt Seviye:', btnSave:'Kaydet', btnUpdate:'Güncelle', saving:'Kaydediliyor...', btnCancel:'İptal',
+    errFillAll:'⚠️ Lütfen tüm alanları doldurun!',
+    msgUpdated:'✅ Kayıt güncellendi!', msgAdded:'✅ Kayıt eklendi ve buluta kaydedildi!',
+    msgSaveError:'⚠️ Kaydedilemedi, internet bağlantınızı kontrol edin.',
+    pwFormHeading:'Şifre Değiştir', lblCurrentPass:'Mevcut Şifre:', lblNewPass:'Yeni Şifre:', lblConfirmPass:'Yeni Şifre Tekrar:',
+    btnChange:'Değiştir', changing:'Kontrol ediliyor...',
+    errWrongCurrentPass:'❌ Mevcut şifre hatalı!', errPassTooShort:'⚠️ Yeni şifre en az 6 karakter olmalı!',
+    errPassMismatch:'❌ Şifreler eşleşmiyor!', msgPassChanged:'✅ Şifre değiştirildi ve güvenli şekilde kaydedildi!',
+    errPassSaveFail:'⚠️ Şifre kaydedilemedi, internet bağlantınızı kontrol edin.',
+    registeredStudentsHeading:'Kayıtlı Öğrenciler',
+    placeholderAdminSearch:'🔍 İsim veya Register No ile ara...', allLevels:'Tüm Seviyeler',
+    resultsFound:'{n} sonuç bulundu (Toplam {total} kayıttan)', noRecordsYet:'Henüz kayıt yok.',
+    noMatchFound:'🔍 Aramanızla eşleşen kayıt bulunamadı.',
+    noPhotoLabel:'Fotoğraf Yok', btnEdit:'✏️ Düzenle', btnDelete:'🗑️ Sil',
+    confirmDelete:'"{name}" ({reg}) kaydını silmek istiyor musunuz?', msgDeleteError:'⚠️ Silinemedi, internet bağlantınızı kontrol edin.',
+    statsLine:'📊 Toplam Kayıtlı Öğrenci: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Aktif: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Pasif: {passive}',
+    firstSetupAlert:'🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: {pass}\n\nLütfen bu şifreyi güvenli bir yere not edin. Tekrar gösterilmeyecektir. Şimdi bu şifre ile giriş yapabilirsiniz.',
+    lockoutMsg:'🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen {mins}:{secs} dakika sonra tekrar deneyin.',
+    legalFooter:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875'
+  },
+  en: {
+    subtitle:'Registered Student Query System',
+    tabQuery:'Search Student', tabAdmin:'Admin Panel',
+    queryHeading:'Registered Student Search',
+    queryDesc:'You can search your registration details by entering your register number.',
+    lblRegisterNo:'Register Number:', placeholderRegisterNo:'Ex: KM2025001',
+    btnSearch:'Search', searching:'Searching...',
+    errEnterReg:'⚠️ Please enter your register number!',
+    errNotFound:'❌ Record not found!', errConn:'⚠️ Connection error, please try again.',
+    foundTitle:'✅ Record Found', qrLabel:'Query Link QR Code',
+    lblFullName:'Full Name:', lblJoinDate:'Academy Entry:', lblExamDate:'Exam Date:',
+    lblExamLoc:'Exam Venue:', lblLevel:'Level:', lblRegNo:'Register No:',
+    statusActive:'🟢 Active Student', statusInactive:'🔴 Inactive Student',
+    btnPdfTr:'📄 PDF İndir (TR)', btnPdfEn:'📄 PDF Download (EN)',
+    adminLoginHeading:'Secure Admin Login', lblPassword:'Admin Password:',
+    placeholderPassword:'Enter your password', btnLogin:'🔓 Log In', loggingIn:'Checking...',
+    errWrongPass:'❌ Wrong password! (Attempts left: {n})', errConnGeneric:'⚠️ Connection error!',
+    adminPanelHeading:'Admin Panel',
+    btnNewRecord:'Add New Record', btnChangePassword:'Change Password',
+    btnDownloadLogs:'📋 Download Logs', btnLogout:'Log Out',
+    downloadLogsHeading:'📋 PDF Download Logs', noLogsYet:'No download logs yet.', logsLoadError:'Failed to load logs.',
+    formTitleNew:'Add New Record', formTitleEdit:'Edit Record',
+    lblStudentName:'Full Name:', placeholderStudentName:'Student full name',
+    lblPhoto:'Student Photo:', btnRemovePhoto:'Remove Photo',
+    lblJoinDateForm:'Academy Entry Date:', lblExamDateForm:'Exam Date:', lblExamLocForm:'Exam Venue:',
+    placeholderExamLoc:'Exam venue', lblMainLevel:'Main Level:', selectPlaceholder:'Select',
+    lblSubLevel:'Sub Level:', btnSave:'Save', btnUpdate:'Update', saving:'Saving...', btnCancel:'Cancel',
+    errFillAll:'⚠️ Please fill in all fields!',
+    msgUpdated:'✅ Record updated!', msgAdded:'✅ Record added and saved to cloud!',
+    msgSaveError:'⚠️ Could not save, please check your internet connection.',
+    pwFormHeading:'Change Password', lblCurrentPass:'Current Password:', lblNewPass:'New Password:', lblConfirmPass:'Confirm New Password:',
+    btnChange:'Change', changing:'Checking...',
+    errWrongCurrentPass:'❌ Current password is incorrect!', errPassTooShort:'⚠️ New password must be at least 6 characters!',
+    errPassMismatch:'❌ Passwords do not match!', msgPassChanged:'✅ Password changed and saved securely!',
+    errPassSaveFail:'⚠️ Could not save password, please check your internet connection.',
+    registeredStudentsHeading:'Registered Students',
+    placeholderAdminSearch:'🔍 Search by name or register no...', allLevels:'All Levels',
+    resultsFound:'{n} results found (out of {total} total)', noRecordsYet:'No records yet.',
+    noMatchFound:'🔍 No records matching your search were found.',
+    noPhotoLabel:'No Photo', btnEdit:'✏️ Edit', btnDelete:'🗑️ Delete',
+    confirmDelete:'Do you want to delete "{name}" ({reg})\'s record?', msgDeleteError:'⚠️ Could not delete, please check your internet connection.',
+    statsLine:'📊 Total Registered Students: {total}&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Active: {active}&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Inactive: {passive}',
+    firstSetupAlert:'🔐 First setup complete!\n\nYour admin password is: {pass}\n\nPlease note it down somewhere safe. It will not be shown again. You can now log in with this password.',
+    lockoutMsg:'🔒 Too many failed attempts.<br>Please try again in {mins}:{secs}.',
+    legalFooter:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875'
+  }
+};
+
+function t(key, params){
+  const dict = UI_I18N[uiLang] || UI_I18N.tr;
+  let str = dict[key] !== undefined ? dict[key] : key;
+  if(params){
+    Object.keys(params).forEach(function(p){ str = str.split('{'+p+'}').join(params[p]); });
+  }
+  return str;
+}
+
+function setUILang(lang){
+  uiLang = lang;
+  localStorage.setItem('uiLang', lang);
+  applyStaticLanguage();
+  // Ekranda açık olan dinamik içerikleri de yenile
+  if(!document.getElementById('admin-panel').classList.contains('hidden')){
+    filterDiplomas();
+  }
+  const searchResultEl = document.getElementById('searchResult');
+  if(searchResultEl && searchResultEl.innerHTML.trim() !== '' && lastSearchedRecord){
+    renderSearchResult(lastSearchedRecord);
+  }
+}
+
+function applyStaticLanguage(){
+  document.getElementById('langBtnTr').classList.toggle('active', uiLang==='tr');
+  document.getElementById('langBtnEn').classList.toggle('active', uiLang==='en');
+
+  document.getElementById('txt-subtitle').textContent = t('subtitle');
+  document.getElementById('tab-query-btn').textContent = t('tabQuery');
+  document.getElementById('tab-admin-btn').textContent = t('tabAdmin');
+  document.getElementById('txt-queryHeading').textContent = t('queryHeading');
+  document.getElementById('txt-queryDesc').textContent = t('queryDesc');
+  document.getElementById('txt-lblRegisterNo').textContent = t('lblRegisterNo');
+  document.getElementById('searchRegister').placeholder = t('placeholderRegisterNo');
+  document.getElementById('search-btn').textContent = t('btnSearch');
+  document.getElementById('txt-adminLoginHeading').textContent = t('adminLoginHeading');
+  document.getElementById('txt-lblPassword').textContent = t('lblPassword');
+  document.getElementById('adminPass').placeholder = t('placeholderPassword');
+  document.getElementById('login-btn').textContent = t('btnLogin');
+  document.getElementById('txt-adminPanelHeading').textContent = t('adminPanelHeading');
+  document.getElementById('btn-new-record').textContent = t('btnNewRecord');
+  document.getElementById('btn-change-password').textContent = t('btnChangePassword');
+  document.getElementById('btn-download-logs').textContent = t('btnDownloadLogs');
+  document.getElementById('btn-logout').textContent = t('btnLogout');
+  document.getElementById('txt-downloadLogsHeading').textContent = t('downloadLogsHeading');
+  document.getElementById('txt-lblStudentName').textContent = t('lblStudentName');
+  document.getElementById('studentName').placeholder = t('placeholderStudentName');
+  document.getElementById('txt-lblPhoto').textContent = t('lblPhoto');
+  document.getElementById('btn-remove-photo').textContent = t('btnRemovePhoto');
+  document.getElementById('txt-lblJoinDateForm').textContent = t('lblJoinDateForm');
+  document.getElementById('txt-lblExamDateForm').textContent = t('lblExamDateForm');
+  document.getElementById('txt-lblExamLocForm').textContent = t('lblExamLocForm');
+  document.getElementById('examLocation').placeholder = t('placeholderExamLoc');
+  document.getElementById('txt-lblMainLevel').textContent = t('lblMainLevel');
+  document.getElementById('opt-selectPlaceholder1').textContent = t('selectPlaceholder');
+  document.getElementById('opt-selectPlaceholder2').textContent = t('selectPlaceholder');
+  document.getElementById('txt-lblSubLevel').textContent = t('lblSubLevel');
+  document.getElementById('save-btn').textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
+  document.getElementById('btn-cancel-add').textContent = t('btnCancel');
+  document.getElementById('form-title').textContent = editingIndex >= 0 ? t('formTitleEdit') : t('formTitleNew');
+  document.getElementById('txt-pwFormHeading').textContent = t('pwFormHeading');
+  document.getElementById('txt-lblCurrentPass').textContent = t('lblCurrentPass');
+  document.getElementById('txt-lblNewPass').textContent = t('lblNewPass');
+  document.getElementById('txt-lblConfirmPass').textContent = t('lblConfirmPass');
+  document.getElementById('pass-btn').textContent = t('btnChange');
+  document.getElementById('btn-cancel-pw').textContent = t('btnCancel');
+  document.getElementById('txt-registeredStudentsHeading').textContent = t('registeredStudentsHeading');
+  document.getElementById('adminSearch').placeholder = t('placeholderAdminSearch');
+  document.getElementById('opt-allLevels').textContent = t('allLevels');
+  document.getElementById('txt-legalFooter').textContent = t('legalFooter');
+}
+
+// ============================================
+// PDF İÇİN ÇOK DİLLİ METİNLER (TR/EN)
 // ============================================
 const PDF_I18N = {
   tr: {
@@ -296,17 +474,8 @@ const PDF_I18N = {
     footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.',
     rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
     noPhoto:'NO PHOTO', locale:'en-US'
-  },
-  de: {
-    title:'KRAV MAGA - Registrierte Schuelerinformationen', diplomaNo:'DIPLOM NR', contactCombat:'CONTACT COMBAT',
-    fullName:'Voller Name:', joinDate:'Akademie Eintritt:', examDate:'Pruefungsdatum:', examLocation:'Pruefungsort:',
-    level:'Stufe:', registerNo:'Register Nr:', status:'Status:', active:'Aktiv', inactive:'Inaktiv',
-    footer:'KRAV MAGA TURK ACADEMY', createdOn:'Dieses Dokument wurde am {date} erstellt.',
-    rights:'© 2026 Alle Rechte vorbehalten. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
-    noPhoto:'KEIN FOTO', locale:'de-DE'
   }
 };
-PDF_I18N.he = PDF_I18N.en; // İbranice gerçek font olmadan render edilemez, güvenli şekilde İngilizce'ye düşer
 
 function turkishSafe(text){
   if(text === null || text === undefined) return '-';
@@ -518,50 +687,54 @@ function infoRow(doc, label, value, y, valueColor){
   doc.text(safeValue, 90, y);
 }
 
+function renderSearchResult(d){
+  const resultDiv = document.getElementById('searchResult');
+  const photoHtml = d.photo ?
+    '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
+    '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">'+t('noPhotoLabel')+'</div>';
+  const statusBadge = d.status === 'pasif' ? '<span class="badge-passive">'+t('statusInactive')+'</span>' : '<span class="badge-active">'+t('statusActive')+'</span>';
+  resultDiv.innerHTML = '<div class="result-card"><h3>'+t('foundTitle')+'</h3>' + photoHtml +
+    '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
+    '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">'+t('qrLabel')+'</div></div>' +
+    '<div class="result-item"><span class="result-label">'+t('lblFullName')+'</span><span>'+d.studentName+'</span></div>' +
+    (d.joinDate ? '<div class="result-item"><span class="result-label">'+t('lblJoinDate')+'</span><span>'+d.joinDate+'</span></div>' : '') +
+    '<div class="result-item"><span class="result-label">'+t('lblExamDate')+'</span><span>'+d.examDate+'</span></div>' +
+    '<div class="result-item"><span class="result-label">'+t('lblExamLoc')+'</span><span>'+d.examLocation+'</span></div>' +
+    '<div class="result-item"><span class="result-label">'+t('lblLevel')+'</span><span>'+d.level+'</span></div>' +
+    '<div class="result-item"><span class="result-label">'+t('lblRegNo')+'</span><span>'+d.registerNo+'</span></div>' +
+    '<div class="pdf-btn-row" style="margin-top:15px;">' +
+      '<button class="btn btn-pdf" onclick="downloadPDF(null,\'tr\')">'+t('btnPdfTr')+'</button>' +
+      '<button class="btn btn-pdf-en" onclick="downloadPDF(null,\'en\')">'+t('btnPdfEn')+'</button>' +
+    '</div></div>';
+  generateQR('searchQR', buildQrUrl(d.registerNo));
+}
+
 async function searchDiploma(){
   const registerNo = document.getElementById('searchRegister').value.trim().toUpperCase();
   const resultDiv = document.getElementById('searchResult');
   const btn = document.getElementById('search-btn');
-  if(!registerNo){resultDiv.innerHTML='<div class="message error">Please enter the registration number!</div>';return;}
-  btn.disabled = true; btn.textContent = 'Aranıyor...';
+  if(!registerNo){resultDiv.innerHTML='<div class="message error">'+t('errEnterReg')+'</div>';return;}
+  btn.disabled = true; btn.textContent = t('searching');
   resultDiv.innerHTML = '<div class="spinner"></div>';
   try {
     const res = await fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json');
     const d = await res.json();
     if(d){
       lastSearchedRecord = d;
-      const photoHtml = d.photo ?
-        '<div class="photo-frame-large" onclick="openLightbox(\''+d.photo+'\')"><img src="'+d.photo+'"></div>' :
-        '<div class="photo-frame-large" style="font-size:12px;color:#999;cursor:default;">Fotoğraf Yok</div>';
-      const statusBadge = d.status === 'pasif' ?
-        '<span class="badge-passive">🔴 Inactive Student</span>' :
-        '<span class="badge-active">🟢 Active Student</span>';
-      resultDiv.innerHTML = '<div class="result-card"><h3>✅ Registered.</h3>' + photoHtml +
-        '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
-        '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Sorgulama Linki QR Kodu</div></div>' +
-        '<div class="result-item"><span class="result-label">Full Name:</span><span>'+d.studentName+'</span></div>' +
-        (d.joinDate ? '<div class="result-item"><span class="result-label">Academy Login:</span><span>'+d.joinDate+'</span></div>' : '') +
-        '<div class="result-item"><span class="result-label">Exam Date:</span><span>'+d.examDate+'</span></div>' +
-        '<div class="result-item"><span class="result-label">Exam Venue:</span><span>'+d.examLocation+'</span></div>' +
-        '<div class="result-item"><span class="result-label">Level:</span><span>'+d.level+'</span></div>' +
-        '<div class="result-item"><span class="result-label">Register No:</span><span>'+d.registerNo+'</span></div>' +
-        '<div style="text-align:center;margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF()">📄 PDF Download</button></div></div>';
-      generateQR('searchQR', buildQrUrl(d.registerNo));
+      renderSearchResult(d);
     } else {
       lastSearchedRecord = null;
-      resultDiv.innerHTML = '<div class="message error">❌ Kayıt bulunamadı!</div>';
+      resultDiv.innerHTML = '<div class="message error">'+t('errNotFound')+'</div>';
     }
   } catch(e){
-    resultDiv.innerHTML = '<div class="message error">⚠️ Bağlantı hatası, lütfen tekrar deneyin.</div>';
+    resultDiv.innerHTML = '<div class="message error">'+t('errConn')+'</div>';
   } finally {
-    btn.disabled = false; btn.textContent = 'Sorgula';
+    btn.disabled = false; btn.textContent = t('btnSearch');
   }
 }
 
 // ============================================
-// PDF OLUŞTURMA - çok dilli (record ve lang parametreleriyle çağrılır)
-// Genel arama: downloadPDF() -> lastSearchedRecord + 'tr'
-// Yönetici satırı: adminDownloadPDF(i) -> seçilen dille
+// PDF OLUŞTURMA - TR/EN
 // ============================================
 async function downloadPDF(record, lang){
   record = record || lastSearchedRecord;
@@ -569,13 +742,6 @@ async function downloadPDF(record, lang){
   if(!record) return;
   const d = record;
   const T = PDF_I18N[lang] || PDF_I18N.tr;
-
-  if(lang === 'he'){
-    alert('⚠️ İbranice karakterler PDF standart fontunda desteklenmiyor.\nÇıktı İngilizce olarak oluşturulacaktır.');
-  }
-
-  const pdfBtn = document.querySelector('.btn-pdf');
-  if(pdfBtn){ pdfBtn.disabled = true; pdfBtn.textContent = 'Hazırlanıyor...'; }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p','mm','a4');
@@ -604,7 +770,6 @@ async function downloadPDF(record, lang){
     doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
   }
 
-  // QR kod artık sorgulama LİNKİNİ taşıyor (register no değil)
   const qrTemp = document.getElementById('pdf-qr-hidden');
   qrTemp.innerHTML = '';
   new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
@@ -689,51 +854,6 @@ async function downloadPDF(record, lang){
   doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
 
   await logDownload(d, lang);
-
-  if(pdfBtn){ pdfBtn.disabled = false; pdfBtn.textContent = '📄 PDF Download'; }
-}
-
-function adminDownloadPDF(i){
-  const sel = document.getElementById('lang-'+i);
-  const lang = sel ? sel.value : 'tr';
-  downloadPDF(diplomaData[i], lang);
-}
-
-// ============================================
-// İNDİRME KAYITLARI (Yönetici Paneli - halka açık arayüzde görünmez)
-// ============================================
-let downloadLogsVisible = false;
-function toggleDownloadLogs(){
-  downloadLogsVisible = !downloadLogsVisible;
-  const section = document.getElementById('download-logs-section');
-  if(downloadLogsVisible){
-    section.classList.remove('hidden');
-    loadDownloadLogs();
-  } else {
-    section.classList.add('hidden');
-  }
-}
-
-async function loadDownloadLogs(){
-  const listEl = document.getElementById('download-logs-list');
-  listEl.innerHTML = '<div class="spinner"></div>';
-  try {
-    const res = await fetch(FIREBASE_URL + '/downloadLogs.json');
-    const data = await res.json();
-    if(!data){ listEl.innerHTML = '<p style="text-align:center;color:#999;">Henüz indirme kaydı yok.</p>'; return; }
-    const entries = Object.values(data).sort(function(a,b){
-      return new Date(b.timestamp) - new Date(a.timestamp);
-    });
-    let html = '';
-    entries.slice(0, 200).forEach(function(entry){
-      const dt = new Date(entry.timestamp);
-      const dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
-      html += '<div class="log-item"><strong>'+entry.studentName+'</strong> — '+entry.registerNo+' — '+(entry.lang||'tr').toUpperCase()+' — <span style="color:#888;">'+dateStr+'</span></div>';
-    });
-    listEl.innerHTML = html || '<p style="text-align:center;color:#999;">Henüz indirme kaydı yok.</p>';
-  } catch(e){
-    listEl.innerHTML = '<p style="text-align:center;color:#c62828;">Kayıtlar yüklenemedi.</p>';
-  }
 }
 
 function checkLockoutStatus(){
@@ -758,13 +878,13 @@ function startLockoutCountdown(lockUntil){
       localStorage.removeItem('loginLockUntil');
       localStorage.removeItem('loginAttempts');
       btn.disabled = false;
-      btn.textContent = '🔓 Giriş Yap';
+      btn.textContent = t('btnLogin');
       msg.innerHTML = '';
       return;
     }
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
-    msg.innerHTML = '<div class="lockout-message">🔒 Çok fazla hatalı deneme yapıldı.<br>Lütfen ' + mins + ':' + String(secs).padStart(2,'0') + ' dakika sonra tekrar deneyin.</div>';
+    msg.innerHTML = '<div class="lockout-message">'+t('lockoutMsg',{mins:mins, secs:String(secs).padStart(2,'0')})+'</div>';
   }
   updateDisplay();
   lockoutTimer = setInterval(updateDisplay, 1000);
@@ -775,7 +895,7 @@ async function adminLogin(){
   const pass = document.getElementById('adminPass').value;
   const msg = document.getElementById('loginMessage');
   const btn = document.getElementById('login-btn');
-  btn.disabled = true; btn.textContent = 'Kontrol ediliyor...';
+  btn.disabled = true; btn.textContent = t('loggingIn');
   try {
     let storedHash = await getStoredPasswordHash();
 
@@ -783,8 +903,8 @@ async function adminLogin(){
       const newPass = generateRandomPassword();
       storedHash = await sha256(newPass);
       await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(storedHash)});
-      alert('🔐 İlk kurulum tamamlandı!\n\nYönetici şifreniz: ' + newPass + '\n\nLütfen bu şifreyi güvenli bir yere not edin. Tekrar gösterilmeyecektir. Şimdi bu şifre ile giriş yapabilirsiniz.');
-      btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
+      alert(t('firstSetupAlert',{pass:newPass}));
+      btn.disabled = false; btn.textContent = t('btnLogin');
       return;
     }
 
@@ -806,13 +926,13 @@ async function adminLogin(){
         startLockoutCountdown(lockUntil);
       } else {
         const remaining = MAX_ATTEMPTS - attempts;
-        msg.innerHTML = '<div class="message error">❌ Hatalı şifre! (Kalan hak: ' + remaining + ')</div>';
-        btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
+        msg.innerHTML = '<div class="message error">'+t('errWrongPass',{n:remaining})+'</div>';
+        btn.disabled = false; btn.textContent = t('btnLogin');
       }
     }
   } catch(e){
-    msg.innerHTML = '<div class="message error">⚠️ Bağlantı hatası!</div>';
-    btn.disabled = false; btn.textContent = '🔓 Giriş Yap';
+    msg.innerHTML = '<div class="message error">'+t('errConnGeneric')+'</div>';
+    btn.disabled = false; btn.textContent = t('btnLogin');
   }
 }
 
@@ -863,8 +983,8 @@ function logout(){
 
 function showAddForm(){
   editingIndex = -1;
-  document.getElementById('form-title').textContent = 'Yeni Kayıt Ekle';
-  document.getElementById('save-btn').textContent = 'Kaydet';
+  document.getElementById('form-title').textContent = t('formTitleNew');
+  document.getElementById('save-btn').textContent = t('btnSave');
   hideAllForms();
   document.getElementById('add-form').classList.remove('hidden');
 }
@@ -899,19 +1019,19 @@ function updateSubLevels(){
   const sel = document.getElementById('subLevel');
   if(levelOptions[level] && levelOptions[level].length>0){
     group.classList.remove('hidden');
-    sel.innerHTML = '<option value="">Seçiniz</option>';
+    sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
     levelOptions[level].forEach(l=>sel.innerHTML += '<option value="'+l+'">'+l+'</option>');
   } else {
     group.classList.add('hidden');
-    sel.innerHTML = '<option value="">Seçiniz</option>';
+    sel.innerHTML = '<option value="">'+t('selectPlaceholder')+'</option>';
   }
 }
 
 function editDiploma(index){
   const d = diplomaData[index];
   editingIndex = index;
-  document.getElementById('form-title').textContent = 'Kaydı Düzenle';
-  document.getElementById('save-btn').textContent = 'Güncelle';
+  document.getElementById('form-title').textContent = t('formTitleEdit');
+  document.getElementById('save-btn').textContent = t('btnUpdate');
   document.getElementById('studentName').value = d.studentName;
   document.getElementById('examLocation').value = d.examLocation;
   document.getElementById('joinDate').value = formatDateForInput(d.joinDate);
@@ -940,7 +1060,7 @@ async function addDiploma(){
   const subLevel = document.getElementById('subLevel').value;
 
   if(!studentName || !examDate || !examLocation || !mainLevel){
-    alert('⚠️ Lütfen tüm alanları doldurun!');
+    alert(t('errFillAll'));
     return;
   }
   let levelText = mainLevel + (subLevel ? ' '+subLevel : '');
@@ -948,7 +1068,7 @@ async function addDiploma(){
   const formattedJoinDate = joinDateRaw ? formatDateForDisplay(joinDateRaw) : '';
 
   const saveBtn = document.getElementById('save-btn');
-  saveBtn.disabled = true; saveBtn.textContent = 'Kaydediliyor...';
+  saveBtn.disabled = true; saveBtn.textContent = t('saving');
 
   const panel = document.getElementById('admin-panel');
   const msg = document.createElement('div');
@@ -960,7 +1080,7 @@ async function addDiploma(){
       registerNo = diplomaData[editingIndex].registerNo;
       record = {registerNo, studentName, joinDate: formattedJoinDate, examDate: formattedExamDate, examLocation, level: levelText, photo: currentPhotoData, status: diplomaData[editingIndex].status || 'aktif'};
       diplomaData[editingIndex] = record;
-      msg.innerHTML = '✅ Kayıt güncellendi!<br><strong>'+registerNo+'</strong> - '+studentName;
+      msg.innerHTML = t('msgUpdated')+'<br><strong>'+registerNo+'</strong> - '+studentName;
     } else {
       const year = new Date().getFullYear();
       let counter = diplomaData.length + 1;
@@ -971,7 +1091,7 @@ async function addDiploma(){
       }
       record = {registerNo, studentName, joinDate: formattedJoinDate, examDate: formattedExamDate, examLocation, level: levelText, photo: currentPhotoData, status: 'aktif'};
       diplomaData.push(record);
-      msg.innerHTML = '✅ Kayıt eklendi ve buluta kaydedildi!<br><strong>'+registerNo+'</strong> - '+studentName;
+      msg.innerHTML = t('msgAdded')+'<br><strong>'+registerNo+'</strong> - '+studentName;
     }
     await fetch(FIREBASE_URL + '/diplomaData/' + registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(record)});
     filterDiplomas();
@@ -980,12 +1100,12 @@ async function addDiploma(){
     setTimeout(function(){ msg.remove(); }, 5000);
   } catch(e){
     msg.className = 'message error';
-    msg.innerHTML = '⚠️ Kaydedilemedi, internet bağlantınızı kontrol edin.';
+    msg.innerHTML = t('msgSaveError');
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); }, 5000);
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = editingIndex >= 0 ? 'Güncelle' : 'Kaydet';
+    saveBtn.textContent = editingIndex >= 0 ? t('btnUpdate') : t('btnSave');
   }
 }
 
@@ -994,7 +1114,7 @@ async function toggleStatus(index){
   d.status = (d.status === 'aktif') ? 'pasif' : 'aktif';
   try {
     await fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)});
-  } catch(e){ alert('⚠️ Durum güncellenemedi, internet bağlantınızı kontrol edin.'); }
+  } catch(e){ alert(t('msgSaveError')); }
   filterDiplomas();
 }
 
@@ -1003,18 +1123,18 @@ async function changePassword(){
   const nw = document.getElementById('newPass').value;
   const cf = document.getElementById('confirmPass').value;
   const btn = document.getElementById('pass-btn');
-  if(!cur||!nw||!cf){alert('⚠️ Lütfen tüm alanları doldurun!');return;}
+  if(!cur||!nw||!cf){alert(t('errFillAll'));return;}
 
-  btn.disabled = true; btn.textContent = 'Kontrol ediliyor...';
+  btn.disabled = true; btn.textContent = t('changing');
   try {
     const curHash = await sha256(cur);
     if(curHash !== currentPasswordHash){
-      alert('❌ Mevcut şifre hatalı!');
-      btn.disabled = false; btn.textContent = 'Değiştir';
+      alert(t('errWrongCurrentPass'));
+      btn.disabled = false; btn.textContent = t('btnChange');
       return;
     }
-    if(nw.length<6){alert('⚠️ Yeni şifre en az 6 karakter olmalı!'); btn.disabled = false; btn.textContent = 'Değiştir'; return;}
-    if(nw !== cf){alert('❌ Şifreler eşleşmiyor!'); btn.disabled = false; btn.textContent = 'Değiştir'; return;}
+    if(nw.length<6){alert(t('errPassTooShort')); btn.disabled = false; btn.textContent = t('btnChange'); return;}
+    if(nw !== cf){alert(t('errPassMismatch')); btn.disabled = false; btn.textContent = t('btnChange'); return;}
 
     const newHash = await sha256(nw);
     await fetch(FIREBASE_URL + '/adminPasswordHash.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(newHash)});
@@ -1023,13 +1143,13 @@ async function changePassword(){
     const panel = document.getElementById('admin-panel');
     const msg = document.createElement('div');
     msg.className='message success';
-    msg.textContent='✅ Şifre değiştirildi ve güvenli şekilde kaydedildi!';
+    msg.textContent = t('msgPassChanged');
     panel.insertBefore(msg, document.getElementById('diploma-list'));
     setTimeout(function(){ msg.remove(); },3000);
   } catch(e){
-    alert('⚠️ Şifre kaydedilemedi, internet bağlantınızı kontrol edin.');
+    alert(t('errPassSaveFail'));
   } finally {
-    btn.disabled = false; btn.textContent = 'Değiştir';
+    btn.disabled = false; btn.textContent = t('btnChange');
   }
 }
 
@@ -1056,7 +1176,7 @@ function renderStats(){
   const passiveCount = total - activeCount;
   if(total > 0){
     statsBox.classList.remove('hidden');
-    statsBox.innerHTML = '📊 Toplam Kayıtlı Öğrenci: ' + total + '&nbsp;&nbsp;|&nbsp;&nbsp;🟢 Aktif: ' + activeCount + '&nbsp;&nbsp;|&nbsp;&nbsp;🔴 Pasif: ' + passiveCount;
+    statsBox.innerHTML = t('statsLine',{total:total, active:activeCount, passive:passiveCount});
   } else {
     statsBox.classList.add('hidden');
   }
@@ -1066,13 +1186,13 @@ function renderDiplomaList(filtered, isFiltering){
   const box = document.getElementById('diploma-items');
   const countBox = document.getElementById('result-count');
   if(diplomaData.length === 0){
-    box.innerHTML = '<p>Henüz kayıt yok.</p>';
+    box.innerHTML = '<p>'+t('noRecordsYet')+'</p>';
     countBox.textContent = '';
     return;
   }
-  countBox.textContent = isFiltering ? (filtered.length + ' sonuç bulundu (Toplam ' + diplomaData.length + ' kayıttan)') : '';
+  countBox.textContent = isFiltering ? t('resultsFound',{n:filtered.length, total:diplomaData.length}) : '';
   if(filtered.length === 0){
-    box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">🔍 No records matching your search were found..</p>';
+    box.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">'+t('noMatchFound')+'</p>';
     return;
   }
   let html = '';
@@ -1081,11 +1201,11 @@ function renderDiplomaList(filtered, isFiltering){
     const isOpen = !!expandedRows[i];
     const statusDot = d.status === 'pasif' ? '🔴' : '🟢';
     const statusBadge = d.status === 'pasif' ?
-      '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">🔴 Inactive Student</span>' :
-      '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">🟢 Active Student</span>';
+      '<span class="badge-passive" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusInactive')+'</span>' :
+      '<span class="badge-active" onclick="event.stopPropagation();toggleStatus('+i+')">'+t('statusActive')+'</span>';
     const photoHtml = d.photo ?
       '<div class="photo-frame" onclick="event.stopPropagation();openLightbox(\''+d.photo+'\')" style="cursor:pointer;"><img src="'+d.photo+'"></div>' :
-      '<div class="photo-frame empty">Fotoğraf<br>Yok</div>';
+      '<div class="photo-frame empty">'+t('noPhotoLabel')+'</div>';
 
     html += '<div class="diploma-row'+(isOpen?'':' closed')+'">' +
         '<div class="row-left" onclick="toggleDetails('+i+')">' +
@@ -1098,18 +1218,18 @@ function renderDiplomaList(filtered, isFiltering){
       '<div class="diploma-details'+(isOpen?'':' hidden')+'" id="details-'+i+'">' +
         photoHtml +
         '<div class="info-block">' +
-          (d.joinDate ? '<p><strong>Akademiye Giriş:</strong> '+d.joinDate+'</p>' : '') +
-          '<p><strong>Sınav Tarihi:</strong> '+d.examDate+'</p>' +
-          '<p><strong>Sınav Yeri:</strong> '+d.examLocation+'</p>' +
-          '<p><strong>Seviye:</strong> '+d.level+'</p>' +
+          (d.joinDate ? '<p><strong>'+t('lblJoinDate')+'</strong> '+d.joinDate+'</p>' : '') +
+          '<p><strong>'+t('lblExamDate')+'</strong> '+d.examDate+'</p>' +
+          '<p><strong>'+t('lblExamLoc')+'</strong> '+d.examLocation+'</p>' +
+          '<p><strong>'+t('lblLevel')+'</strong> '+d.level+'</p>' +
           '<div style="margin-top:8px;">'+statusBadge+'</div>' +
         '</div>' +
         '<div class="actions">' +
-          '<button class="btn btn-edit" onclick="editDiploma('+i+')">✏️ Düzenle</button>' +
-          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">🗑️ Sil</button>' +
-          '<div class="lang-pdf-row">' +
-            '<select id="lang-'+i+'" class="lang-select"><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="he">HE</option></select>' +
-            '<button class="btn btn-pdf" style="padding:6px 10px;font-size:12px;margin:0;" onclick="adminDownloadPDF('+i+')">📄 PDF</button>' +
+          '<button class="btn btn-edit" onclick="editDiploma('+i+')">'+t('btnEdit')+'</button>' +
+          '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">'+t('btnDelete')+'</button>' +
+          '<div class="pdf-btn-row">' +
+            '<button class="btn btn-pdf" onclick="downloadPDF(diplomaData['+i+'],\'tr\')">'+t('btnPdfTr')+'</button>' +
+            '<button class="btn btn-pdf-en" onclick="downloadPDF(diplomaData['+i+'],\'en\')">'+t('btnPdfEn')+'</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -1129,24 +1249,62 @@ function toggleDetails(i){
 
 async function deleteDiploma(i){
   const d = diplomaData[i];
-  if(confirm('"'+d.studentName+'" ('+d.registerNo+') kaydını silmek istiyor musunuz?')){
+  if(confirm(t('confirmDelete',{name:d.studentName, reg:d.registerNo}))){
     try {
       await fetch(FIREBASE_URL + '/diplomaData/' + d.registerNo + '.json', {method:'DELETE'});
       await loadAllDiplomas();
     } catch(e){
-      alert('⚠️ Silinemedi, internet bağlantınızı kontrol edin.');
+      alert(t('msgDeleteError'));
     }
   }
 }
 
+// ============================================
+// İNDİRME KAYITLARI (Yönetici Paneli - halka açık arayüzde görünmez)
+// ============================================
+let downloadLogsVisible = false;
+function toggleDownloadLogs(){
+  downloadLogsVisible = !downloadLogsVisible;
+  const section = document.getElementById('download-logs-section');
+  if(downloadLogsVisible){
+    section.classList.remove('hidden');
+    loadDownloadLogs();
+  } else {
+    section.classList.add('hidden');
+  }
+}
+
+async function loadDownloadLogs(){
+  const listEl = document.getElementById('download-logs-list');
+  listEl.innerHTML = '<div class="spinner"></div>';
+  try {
+    const res = await fetch(FIREBASE_URL + '/downloadLogs.json');
+    const data = await res.json();
+    if(!data){ listEl.innerHTML = '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>'; return; }
+    const entries = Object.values(data).sort(function(a,b){
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+    let html = '';
+    entries.slice(0, 200).forEach(function(entry){
+      const dt = new Date(entry.timestamp);
+      const dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+      html += '<div class="log-item"><strong>'+entry.studentName+'</strong> — '+entry.registerNo+' — '+(entry.lang||'tr').toUpperCase()+' — <span style="color:#888;">'+dateStr+'</span></div>';
+    });
+    listEl.innerHTML = html || '<p style="text-align:center;color:#999;">'+t('noLogsYet')+'</p>';
+  } catch(e){
+    listEl.innerHTML = '<p style="text-align:center;color:#c62828;">'+t('logsLoadError')+'</p>';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
+  applyStaticLanguage();
+
   const searchInput = document.getElementById('searchRegister');
   if(searchInput){ searchInput.addEventListener('keypress', function(e){ if(e.key==='Enter') searchDiploma(); }); }
   const passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
   checkLockoutStatus();
 
-  // QR koddan gelen ?reg=KMxxx parametresini yakalayıp otomatik sorgula
   const urlParams = new URLSearchParams(window.location.search);
   const regParam = urlParams.get('reg');
   if(regParam && searchInput){
