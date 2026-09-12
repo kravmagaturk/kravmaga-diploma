@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Krinternational registration</title>
+<title>Krav Maga International Registration</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -73,11 +73,16 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 .diploma-details .info-block{flex:1;min-width:180px;}
 .diploma-details .info-block p{margin:4px 0;font-size:14px;color:#555;}
 .diploma-details .actions{display:flex;flex-direction:column;gap:6px;align-items:center;}
+.lang-pdf-row{display:flex;gap:4px;align-items:center;margin-top:6px;}
+.lang-select{padding:5px;border-radius:4px;border:1px solid #ddd;font-size:12px;}
 .lightbox-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:zoom-out;}
 .lightbox-overlay.show{display:flex;}
 .lightbox-overlay img{max-width:90%;max-height:90%;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);background:#fff;}
 .lightbox-close{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;font-weight:bold;}
 .legal-footer{text-align:center;padding:15px;font-size:11px;color:#999;border-top:1px solid #eee;background:#fafafa;}
+.log-list{max-height:400px;overflow-y:auto;background:#fff;border:1px solid #eee;border-radius:6px;padding:10px;}
+.log-item{padding:10px;border-bottom:1px solid #f0f0f0;font-size:13px;}
+.log-item:last-child{border-bottom:none;}
 @media (max-width:600px){.container{margin:10px;}.content{padding:20px;}.tabs{flex-direction:column;}.row-name{max-width:110px;}}
 </style>
 </head>
@@ -130,7 +135,13 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
         <div style="margin-bottom:20px;">
           <button class="btn" onclick="showAddForm()">Yeni Kayıt Ekle</button>
           <button class="btn" onclick="showPasswordForm()">Şifre Değiştir</button>
+          <button class="btn" onclick="toggleDownloadLogs()">📋 İndirme Kayıtları</button>
           <button class="btn btn-secondary" onclick="logout()">Çıkış</button>
+        </div>
+
+        <div id="download-logs-section" class="hidden" style="margin-bottom:20px;">
+          <h4 style="margin-bottom:10px;color:#d32f2f;">📋 PDF İndirme Kayıtları</h4>
+          <div id="download-logs-list" class="log-list"><div class="spinner"></div></div>
         </div>
 
         <div id="add-form" class="hidden">
@@ -169,6 +180,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Asistan">Asistan</option>
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
+              <option value="Representative">Representative</option>
             </select>
           </div>
           <div class="form-group hidden" id="sub-level-group">
@@ -219,6 +231,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
               <option value="Asistan">Asistan</option>
               <option value="Instructor">Instructor</option>
               <option value="Close Protection">Close Protection</option>
+              <option value="Representative">Representative</option>
             </select>
           </div>
           <div id="result-count" class="result-count"></div>
@@ -244,6 +257,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6;
 const FIREBASE_URL = 'https://kravmaga-diploma-default-rtdb.firebaseio.com';
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MINUTES = 5;
+const SITE_URL = 'https://kravmagaturk.github.io/international-register/';
 let lockoutTimer = null;
 
 let diplomaData = [];
@@ -258,20 +272,66 @@ const levelOptions = {
   'Practitioner':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Graduate':['Level 1','Level 2','Level 3','Level 4','Level 5'],
   'Expert':['Level 1','Level 2','Level 3','Level 4','Level 5'],
-  'Asistan':[], 'Antrenör':[], 'Yakın Koruma':[]
+  'Asistan':[], 'Instructor':[], 'Close Protection':[], 'Representative':[]
 };
 
 // ============================================
-// TÜRKÇE KARAKTER GÜVENLİĞİ - PDF standart fontu desteklemediği
-// için sadece 6 sorunlu harfi güvenli Latin karşılığına çevirir.
-// (font indirme YOK, internete bağımlı değil, asla başarısız olmaz)
+// ÇOK DİLLİ PDF METİNLERİ
+// (İbranice gerçek font gerektirir; şu an için İngilizce'ye eşlenmiştir,
+//  kullanıcı seçince uyarı gösterilir - sessizce bozuk çıktı üretmez.)
 // ============================================
+const PDF_I18N = {
+  tr: {
+    title:'KRAV MAGA - Kayıtlı Öğrenci Bilgileri', diplomaNo:'DİPLOMA NO', contactCombat:'CONTACT COMBAT',
+    fullName:'Adı Soyadı:', joinDate:'Akademiye Giriş:', examDate:'Sınav Tarihi:', examLocation:'Sınav Yeri:',
+    level:'Seviye:', registerNo:'Register No:', status:'Durum:', active:'Aktif', inactive:'Pasif',
+    footer:'KRAV MAGA TURK ACADEMY', createdOn:'Bu belge {date} tarihinde oluşturulmuştur.',
+    rights:'© 2026 Tüm Hakları Saklıdır. Krav Maga Turk Güvenlik Danışmanlığı ®TPE: 2007/49875',
+    noPhoto:'FOTOGRAF YOK', locale:'tr-TR'
+  },
+  en: {
+    title:'KRAV MAGA - Registered Student Information', diplomaNo:'DIPLOMA NO', contactCombat:'CONTACT COMBAT',
+    fullName:'Full Name:', joinDate:'Academy Entry:', examDate:'Exam Date:', examLocation:'Exam Venue:',
+    level:'Level:', registerNo:'Register No:', status:'Status:', active:'Active', inactive:'Inactive',
+    footer:'KRAV MAGA TURK ACADEMY', createdOn:'This document was created on {date}.',
+    rights:'© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
+    noPhoto:'NO PHOTO', locale:'en-US'
+  },
+  de: {
+    title:'KRAV MAGA - Registrierte Schuelerinformationen', diplomaNo:'DIPLOM NR', contactCombat:'CONTACT COMBAT',
+    fullName:'Voller Name:', joinDate:'Akademie Eintritt:', examDate:'Pruefungsdatum:', examLocation:'Pruefungsort:',
+    level:'Stufe:', registerNo:'Register Nr:', status:'Status:', active:'Aktiv', inactive:'Inaktiv',
+    footer:'KRAV MAGA TURK ACADEMY', createdOn:'Dieses Dokument wurde am {date} erstellt.',
+    rights:'© 2026 Alle Rechte vorbehalten. Krav Maga Turk Security Consultancy ®TPE: 2007/49875',
+    noPhoto:'KEIN FOTO', locale:'de-DE'
+  }
+};
+PDF_I18N.he = PDF_I18N.en; // İbranice gerçek font olmadan render edilemez, güvenli şekilde İngilizce'ye düşer
+
 function turkishSafe(text){
   if(text === null || text === undefined) return '-';
   return String(text)
     .replace(/İ/g,'I').replace(/ı/g,'i')
     .replace(/Ş/g,'S').replace(/ş/g,'s')
     .replace(/Ğ/g,'G').replace(/ğ/g,'g');
+}
+
+function buildQrUrl(registerNo){
+  return SITE_URL + '?reg=' + encodeURIComponent(registerNo);
+}
+
+async function logDownload(record, lang){
+  try {
+    await fetch(FIREBASE_URL + '/downloadLogs.json', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        studentName: record.studentName,
+        registerNo: record.registerNo,
+        lang: lang || 'tr',
+        timestamp: new Date().toISOString()
+      })
+    });
+  } catch(e){ console.warn('İndirme kaydedilemedi:', e); }
 }
 
 async function sha256(text){
@@ -366,7 +426,6 @@ function generateQR(elementId, text){
   new QRCode(el, { text: text, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
 }
 
-// LOGO - fetch+blob (güvenilir, CORS riski yok)
 async function prepareLogoBase64(){
   if(cachedLogoBase64 !== null) return cachedLogoBase64;
   try {
@@ -445,7 +504,6 @@ function smallBracket(doc, x, y, dx, dy, size){
   doc.line(x, y, x+dx*size, y);
 }
 
-// Bilgi satırı - metinler turkishSafe ile güvenli hale getiriliyor
 function infoRow(doc, label, value, y, valueColor){
   const safeLabel = turkishSafe(label);
   const safeValue = turkishSafe(value);
@@ -480,7 +538,7 @@ async function searchDiploma(){
         '<span class="badge-active">🟢 Active Student</span>';
       resultDiv.innerHTML = '<div class="result-card"><h3>✅ Registered.</h3>' + photoHtml +
         '<div style="text-align:center;margin-bottom:10px;">'+statusBadge+'</div>' +
-        '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Register No QR Kodu</div></div>' +
+        '<div class="qr-box"><div id="searchQR"></div><div class="qr-label">Sorgulama Linki QR Kodu</div></div>' +
         '<div class="result-item"><span class="result-label">Full Name:</span><span>'+d.studentName+'</span></div>' +
         (d.joinDate ? '<div class="result-item"><span class="result-label">Academy Login:</span><span>'+d.joinDate+'</span></div>' : '') +
         '<div class="result-item"><span class="result-label">Exam Date:</span><span>'+d.examDate+'</span></div>' +
@@ -488,7 +546,7 @@ async function searchDiploma(){
         '<div class="result-item"><span class="result-label">Level:</span><span>'+d.level+'</span></div>' +
         '<div class="result-item"><span class="result-label">Register No:</span><span>'+d.registerNo+'</span></div>' +
         '<div style="text-align:center;margin-top:15px;"><button class="btn btn-pdf" onclick="downloadPDF()">📄 PDF Download</button></div></div>';
-      generateQR('searchQR', d.registerNo);
+      generateQR('searchQR', buildQrUrl(d.registerNo));
     } else {
       lastSearchedRecord = null;
       resultDiv.innerHTML = '<div class="message error">❌ Kayıt bulunamadı!</div>';
@@ -501,12 +559,20 @@ async function searchDiploma(){
 }
 
 // ============================================
-// PDF OLUŞTURMA - Türkçe karakter güvenliği + garantili kare fotoğraf
-// Sıralama: Logo > QR > Fotoğraf > Diploma No > Başlık > Bilgiler > Footer
+// PDF OLUŞTURMA - çok dilli (record ve lang parametreleriyle çağrılır)
+// Genel arama: downloadPDF() -> lastSearchedRecord + 'tr'
+// Yönetici satırı: adminDownloadPDF(i) -> seçilen dille
 // ============================================
-async function downloadPDF(){
-  if(!lastSearchedRecord) return;
-  const d = lastSearchedRecord;
+async function downloadPDF(record, lang){
+  record = record || lastSearchedRecord;
+  lang = lang || 'tr';
+  if(!record) return;
+  const d = record;
+  const T = PDF_I18N[lang] || PDF_I18N.tr;
+
+  if(lang === 'he'){
+    alert('⚠️ İbranice karakterler PDF standart fontunda desteklenmiyor.\nÇıktı İngilizce olarak oluşturulacaktır.');
+  }
 
   const pdfBtn = document.querySelector('.btn-pdf');
   if(pdfBtn){ pdfBtn.disabled = true; pdfBtn.textContent = 'Hazırlanıyor...'; }
@@ -517,15 +583,8 @@ async function downloadPDF(){
 
   const logoData = await prepareLogoBase64();
 
-  // 1. Arka plan - çapraz filigran
   doc.addImage(generateDiagonalTextLayer(), 'PNG', 0, 0, 210, 297);
-
-  // 2. Sağ üstte soluk logo damgası
-  if(logoData){
-    drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09);
-  }
-
-  // 3. Köşe süsleri
+  if(logoData){ drawWatermarkLogo(doc, logoData, 180, 62, 62, 0.09); }
   drawCornerBrackets(doc);
 
   const emY = 12, emSize = 34, emCx = pageW/2, emCy = emY + emSize/2, emR = emSize/2;
@@ -538,7 +597,6 @@ async function downloadPDF(){
   const footerY = 262, footerDashY = 260.5;
   const legal1Y = 272, legal2Y = 280;
 
-  // 4. Üst logo
   if(logoData){
     drawCircularImage(doc, logoData, emCx, emCy, emR);
   } else {
@@ -546,10 +604,10 @@ async function downloadPDF(){
     doc.text('KRAV MAGA', pageW/2, emY+18, {align:'center'});
   }
 
-  // 5. QR kod
+  // QR kod artık sorgulama LİNKİNİ taşıyor (register no değil)
   const qrTemp = document.getElementById('pdf-qr-hidden');
   qrTemp.innerHTML = '';
-  new QRCode(qrTemp, { text: d.registerNo, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+  new QRCode(qrTemp, { text: buildQrUrl(d.registerNo), width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
   await new Promise(function(resolve){ setTimeout(resolve, 200); });
   try {
     const qrCanvas = qrTemp.querySelector('canvas');
@@ -563,23 +621,21 @@ async function downloadPDF(){
     }
   } catch(e){}
 
-  // 6. Fotoğraf - sistem her zaman kare (300x300) üretir, direkt kareye sığdır
   doc.setFillColor(235,235,235);
   doc.rect(photoX, photoY, photoSize, photoSize, 'F');
   if(d.photo){
     try { doc.addImage(d.photo, 'JPEG', photoX, photoY, photoSize, photoSize); } catch(e){}
   } else {
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,150,150);
-    doc.text('FOTOGRAF YOK', photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
+    doc.text(T.noPhoto, photoX+photoSize/2, photoY+photoSize/2, {align:'center'});
   }
   smallBracket(doc, photoX, photoY, 1, 1, 9);
   smallBracket(doc, photoX+photoSize, photoY, -1, 1, 9);
   smallBracket(doc, photoX, photoY+photoSize, 1, -1, 9);
   smallBracket(doc, photoX+photoSize, photoY+photoSize, -1, -1, 9);
 
-  // 7. DİPLOMA NO (turkishSafe ile ölçüm ve çizim aynı metinle yapılır - çizgi kayması olmaz)
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-  const dLabel = turkishSafe('DİPLOMA NO');
+  const dLabel = turkishSafe(T.diplomaNo);
   const dLabelW = doc.getTextWidth(dLabel);
   doc.text(dLabel, pageW/2, dLabelY, {align:'center'});
   doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
@@ -589,7 +645,6 @@ async function downloadPDF(){
   doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(15,15,15);
   doc.text(turkishSafe(d.registerNo), pageW/2, dNumberY, {align:'center'});
 
-  // 8. Büyük başlık
   doc.setFont('helvetica','bold'); doc.setFontSize(25);
   const w1 = doc.getTextWidth('KRAV '), w2 = doc.getTextWidth('MAGA');
   const sx = pageW/2 - (w1+w2)/2;
@@ -597,45 +652,88 @@ async function downloadPDF(){
   doc.setTextColor(224,0,0); doc.text('MAGA', sx+w1, titleY);
 
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(60,60,60);
-  const ccLabel = 'CONTACT COMBAT';
+  const ccLabel = T.contactCombat;
   const ccW = doc.getTextWidth(ccLabel);
   doc.text(ccLabel, pageW/2, subtitleY, {align:'center'});
   doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
   doc.line(pageW/2 - ccW/2 - 30, dashY, pageW/2 - ccW/2 - 6, dashY);
   doc.line(pageW/2 + ccW/2 + 6, dashY, pageW/2 + ccW/2 + 30, dashY);
 
-  // 9. Bilgi satırları
   let ry = rowStartY;
-  infoRow(doc, 'Full Name:', d.studentName, ry); ry += rowStep;
-  if(d.joinDate){ infoRow(doc, 'Introduction to the Academy:', d.joinDate, ry); ry += rowStep; }
-  infoRow(doc, 'Exam Date:', d.examDate, ry); ry += rowStep;
-  infoRow(doc, 'Exam Venue:', d.examLocation, ry); ry += rowStep;
-  infoRow(doc, 'Level:', d.level, ry); ry += rowStep;
-  infoRow(doc, 'Register No:', d.registerNo, ry); ry += rowStep;
+  infoRow(doc, T.fullName, d.studentName, ry); ry += rowStep;
+  if(d.joinDate){ infoRow(doc, T.joinDate, d.joinDate, ry); ry += rowStep; }
+  infoRow(doc, T.examDate, d.examDate, ry); ry += rowStep;
+  infoRow(doc, T.examLocation, d.examLocation, ry); ry += rowStep;
+  infoRow(doc, T.level, d.level, ry); ry += rowStep;
+  infoRow(doc, T.registerNo, d.registerNo, ry); ry += rowStep;
   const isActive = d.status !== 'pasif';
-  infoRow(doc, 'Situation:', isActive ? 'Active Student' : 'Inactive Student', ry, isActive ? [46,125,50] : [198,40,40]);
+  infoRow(doc, T.status, isActive ? T.active : T.inactive, ry, isActive ? [46,125,50] : [198,40,40]);
 
-  // 10. Footer
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(20,20,20);
-  const footerLabel = 'KRAV MAGA TURK ACADEMY';
+  const footerLabel = T.footer;
   const flW = doc.getTextWidth(footerLabel);
   doc.text(footerLabel, pageW/2, footerY, {align:'center'});
   doc.setDrawColor(90,90,90); doc.setLineWidth(0.4);
   doc.line(pageW/2 - flW/2 - 34, footerDashY, pageW/2 - flW/2 - 6, footerDashY);
   doc.line(pageW/2 + flW/2 + 6, footerDashY, pageW/2 + flW/2 + 34, footerDashY);
 
-  // 11. Yasal metin (turkishSafe uygulanmış, tam ortalı)
   doc.setFont('helvetica','normal');
   doc.setFontSize(8);
   doc.setTextColor(150,150,150);
-  doc.text(turkishSafe('This Document ' + new Date().toLocaleDateString('tr-TR') + ' created on.'), pageW/2, legal1Y, {align:'center'});
+  const dateStr = new Date().toLocaleDateString(T.locale || 'tr-TR');
+  doc.text(turkishSafe(T.createdOn.replace('{date}', dateStr)), pageW/2, legal1Y, {align:'center'});
   doc.setFontSize(7.5);
   doc.setTextColor(160,160,160);
-  doc.text(turkishSafe('© 2026 All Rights Reserved. Krav Maga Turk Security Consultancy ®TPE: 2007/49875'), pageW/2, legal2Y, {align:'center'});
+  doc.text(turkishSafe(T.rights), pageW/2, legal2Y, {align:'center'});
 
-  doc.save('sertifika-' + d.registerNo + '.pdf');
+  doc.save('sertifika-' + d.registerNo + '-' + lang + '.pdf');
 
-  if(pdfBtn){ pdfBtn.disabled = false; pdfBtn.textContent = '📄 PDF İndir'; }
+  await logDownload(d, lang);
+
+  if(pdfBtn){ pdfBtn.disabled = false; pdfBtn.textContent = '📄 PDF Download'; }
+}
+
+function adminDownloadPDF(i){
+  const sel = document.getElementById('lang-'+i);
+  const lang = sel ? sel.value : 'tr';
+  downloadPDF(diplomaData[i], lang);
+}
+
+// ============================================
+// İNDİRME KAYITLARI (Yönetici Paneli - halka açık arayüzde görünmez)
+// ============================================
+let downloadLogsVisible = false;
+function toggleDownloadLogs(){
+  downloadLogsVisible = !downloadLogsVisible;
+  const section = document.getElementById('download-logs-section');
+  if(downloadLogsVisible){
+    section.classList.remove('hidden');
+    loadDownloadLogs();
+  } else {
+    section.classList.add('hidden');
+  }
+}
+
+async function loadDownloadLogs(){
+  const listEl = document.getElementById('download-logs-list');
+  listEl.innerHTML = '<div class="spinner"></div>';
+  try {
+    const res = await fetch(FIREBASE_URL + '/downloadLogs.json');
+    const data = await res.json();
+    if(!data){ listEl.innerHTML = '<p style="text-align:center;color:#999;">Henüz indirme kaydı yok.</p>'; return; }
+    const entries = Object.values(data).sort(function(a,b){
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+    let html = '';
+    entries.slice(0, 200).forEach(function(entry){
+      const dt = new Date(entry.timestamp);
+      const dateStr = String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear()+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+      html += '<div class="log-item"><strong>'+entry.studentName+'</strong> — '+entry.registerNo+' — '+(entry.lang||'tr').toUpperCase()+' — <span style="color:#888;">'+dateStr+'</span></div>';
+    });
+    listEl.innerHTML = html || '<p style="text-align:center;color:#999;">Henüz indirme kaydı yok.</p>';
+  } catch(e){
+    listEl.innerHTML = '<p style="text-align:center;color:#c62828;">Kayıtlar yüklenemedi.</p>';
+  }
 }
 
 function checkLockoutStatus(){
@@ -1009,6 +1107,10 @@ function renderDiplomaList(filtered, isFiltering){
         '<div class="actions">' +
           '<button class="btn btn-edit" onclick="editDiploma('+i+')">✏️ Düzenle</button>' +
           '<button class="btn btn-danger" onclick="deleteDiploma('+i+')">🗑️ Sil</button>' +
+          '<div class="lang-pdf-row">' +
+            '<select id="lang-'+i+'" class="lang-select"><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="he">HE</option></select>' +
+            '<button class="btn btn-pdf" style="padding:6px 10px;font-size:12px;margin:0;" onclick="adminDownloadPDF('+i+')">📄 PDF</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
   });
@@ -1043,6 +1145,14 @@ document.addEventListener('DOMContentLoaded', function(){
   const passInput = document.getElementById('adminPass');
   if(passInput){ passInput.addEventListener('keypress', function(e){ if(e.key==='Enter') adminLogin(); }); }
   checkLockoutStatus();
+
+  // QR koddan gelen ?reg=KMxxx parametresini yakalayıp otomatik sorgula
+  const urlParams = new URLSearchParams(window.location.search);
+  const regParam = urlParams.get('reg');
+  if(regParam && searchInput){
+    searchInput.value = regParam;
+    searchDiploma();
+  }
 });
 </script>
 </body>
